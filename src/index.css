@@ -1,1 +1,267 @@
 @import "tailwindcss";
+
+@theme {
+  --color-abyss: #070e0d;
+  --color-panel: #0c1615;
+  --color-panel2: #101d1b;
+  --color-raise: #142522;
+  --color-line: #1c2f2b;
+  --color-line2: #2b463f;
+  --color-ink: #e9f4f0;
+  --color-mut: #8fa9a1;
+  --color-dim: #5e7770;
+  --color-teal: #3edcb4;
+  --color-tealhi: #7cf5d6;
+  --color-amber: #f4b860;
+  --color-coral: #f2796b;
+  --color-sky: #66b7f0;
+
+  --font-display: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-abyss);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ---- layered ambient background ---- */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(124, 245, 214, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 245, 214, 0.045) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(ellipse 120% 90% at 50% 0%, black 30%, transparent 78%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: rgba(62, 220, 180, 0.85);
+  color: #06201a;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2b463f transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2b463f;
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- components ---- */
+.card {
+  background: linear-gradient(180deg, rgba(20, 37, 34, 0.55), rgba(12, 22, 21, 0.9));
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+  transition: border-color 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
+}
+.card:hover {
+  border-color: rgba(62, 220, 180, 0.38);
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px -22px rgba(0, 0, 0, 0.75);
+}
+.card-static {
+  background: linear-gradient(180deg, rgba(20, 37, 34, 0.55), rgba(12, 22, 21, 0.9));
+  border: 1px solid var(--color-line);
+  border-radius: 10px;
+}
+
+.btn-teal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--color-teal);
+  color: #062019;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.62rem 1.05rem;
+  border-radius: 8px;
+  border: 1px solid rgba(124, 245, 214, 0.6);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+.btn-teal:hover {
+  background: var(--color-tealhi);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 26px -10px rgba(62, 220, 180, 0.55);
+}
+.btn-teal:active {
+  transform: translateY(0);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  color: var(--color-mut);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 0.62rem 1.05rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-line2);
+  cursor: pointer;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.btn-ghost:hover {
+  color: var(--color-ink);
+  border-color: rgba(62, 220, 180, 0.5);
+  background: rgba(62, 220, 180, 0.06);
+  transform: translateY(-1px);
+}
+
+.tip {
+  background: rgba(8, 17, 15, 0.96);
+  border: 1px solid var(--color-line2);
+  border-radius: 8px;
+  padding: 8px 11px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--color-ink);
+  box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ---- reveal on scroll ---- */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1), transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---- keyframes ---- */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(62, 220, 180, 0.5); }
+  50% { opacity: 0.6; box-shadow: 0 0 0 6px rgba(62, 220, 180, 0); }
+}
+.pulse-dot {
+  animation: pulse-dot 2.2s ease-in-out infinite;
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-26px); }
+}
+.mote {
+  position: absolute;
+  border-radius: 9999px;
+  background: rgba(62, 220, 180, 0.28);
+  animation: float-y 9s ease-in-out infinite;
+}
+
+@keyframes glow-slow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+.glow-slow {
+  animation: glow-slow 11s ease-in-out infinite;
+}
+
+@keyframes dash-march {
+  to { stroke-dashoffset: -28; }
+}
+.dash-march {
+  animation: dash-march 1.4s linear infinite;
+}
+
+@keyframes stripes {
+  to { background-position: 24px 0; }
+}
+.stripes {
+  background-image: linear-gradient(
+    135deg,
+    rgba(124, 245, 214, 0.9) 25%,
+    rgba(62, 220, 180, 0.9) 25%,
+    rgba(62, 220, 180, 0.9) 50%,
+    rgba(124, 245, 214, 0.9) 50%,
+    rgba(124, 245, 214, 0.9) 75%,
+    rgba(62, 220, 180, 0.9) 75%
+  );
+  background-size: 24px 24px;
+  animation: stripes 0.7s linear infinite;
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+.blink {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes fade-line {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.fade-line {
+  animation: fade-line 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes scan-y {
+  0% { top: -8%; }
+  100% { top: 108%; }
+}
+.scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: linear-gradient(180deg, transparent, rgba(62, 220, 180, 0.09), transparent);
+  animation: scan-y 4.5s linear infinite;
+  pointer-events: none;
+}
+
+/* recharts polish */
+.recharts-cartesian-axis-tick text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: #5e7770;
+}
+.recharts-label-list text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: #8fa9a1;
+}
