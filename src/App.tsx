@@ -3,10 +3,11 @@ import { analyzeDataset, type Dataset } from "./lib/analyze";
 import { IntakeView, PipelineView } from "./components/intake";
 import { Dashboard } from "./components/dashboard";
 import { Academy } from "./components/academy";
-import { LogoMark, IconTable, IconCap } from "./components/ui";
+import { ArchitecturePage } from "./components/arch";
+import { LogoMark, IconTable, IconCap, IconLayers } from "./components/ui";
 
 type View = "intake" | "pipeline" | "dashboard";
-type Area = "console" | "academy";
+type Area = "console" | "academy" | "arch";
 
 /* partículas ambientes com posições fixas (sem aleatoriedade por render) */
 const MOTES = [
@@ -112,6 +113,7 @@ export default function App() {
               [
                 { id: "console", label: "console", Icon: IconTable },
                 { id: "academy", label: "analytics", Icon: IconCap },
+                { id: "arch", label: "arquitetura", Icon: IconLayers },
               ] as { id: Area; label: string; Icon: typeof IconTable }[]
             ).map(({ id, label, Icon }) => (
               <button
@@ -157,6 +159,8 @@ export default function App() {
               window.scrollTo({ top: 0 });
             }}
           />
+        ) : area === "arch" ? (
+          <ArchitecturePage />
         ) : (
           <>
             {view === "intake" && <IntakeView onAnalyze={handleAnalyze} />}

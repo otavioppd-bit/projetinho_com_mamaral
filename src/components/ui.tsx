@@ -336,6 +336,21 @@ export const IconGrid = ({ className = "w-4 h-4" }: IconProps) => (
   </svg>
 );
 
+export const IconLayers = ({ className = "w-4 h-4" }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} {...S}>
+    <path d="m12 3 9 4.5-9 4.5-9-4.5L12 3Z" />
+    <path d="m3 12 9 4.5 9-4.5" />
+    <path d="m3 16.5 9 4.5 9-4.5" />
+  </svg>
+);
+
+export const IconShield = ({ className = "w-4 h-4" }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} {...S}>
+    <path d="M12 3 5 5.5v5.2c0 4.6 3 8 7 10.3 4-2.3 7-5.7 7-10.3V5.5L12 3Z" />
+    <path d="m9 11.5 2.2 2.2L15.5 9.4" />
+  </svg>
+);
+
 export const IconCap = ({ className = "w-4 h-4" }: IconProps) => (
   <svg viewBox="0 0 24 24" className={className} {...S}>
     <path d="m12 4 10 5-10 5L2 9l10-5Z" />
