@@ -87,7 +87,7 @@ export function IntakeView({
             <span className="text-teal">Ciência sai.</span>
           </h1>
           <p className="text-mut text-base md:text-lg mt-6 max-w-xl leading-relaxed">
-            O {theme === "ameba" ? "AMEBA" : "Anthony.ia"} recebe seu CSV ou JSON, <b className="text-ink font-semibold">higieniza cada célula</b>,
+            O Anthony.ia recebe seu CSV ou JSON, <b className="text-ink font-semibold">higieniza cada célula</b>,
             perfila as variáveis e devolve um dossiê visual digno de revista científica —
             sem servidor, sem upload, sem espera.
           </p>

@@ -98,10 +98,7 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("prisma-versao", theme);
-    document.title =
-      theme === "ameba"
-        ? "AMEBA · Control room de dados"
-        : "Anthony.ia · Análise de dados no navegador";
+    document.title = "Anthony.ia · Análise de dados no navegador";
   }, [theme]);
 
   const openArea = (a: Area) => {
@@ -140,14 +137,8 @@ export default function App() {
         <div className="max-w-[1280px] mx-auto px-5 md:px-8 h-16 flex items-center gap-3">
           <LogoMark className="w-8 h-8" />
           <div className="leading-none">
-            <span className="font-display font-bold text-[19px] tracking-[0.06em]">
-              {theme === "ameba" ? (
-                "AMEBA"
-              ) : (
-                <>
-                  Anthony<span className="text-teal">.ia</span>
-                </>
-              )}
+            <span className="font-display font-bold text-[19px] tracking-[0.02em]">
+              Anthony<span className="text-teal">.ia</span>
             </span>
             <span className="hidden sm:block font-mono text-[8.5px] uppercase tracking-[0.3em] text-dim mt-1">
               {theme === "ameba" ? "control room" : "data engine"}
@@ -166,7 +157,7 @@ export default function App() {
                     : "text-dim border-transparent hover:text-mut"
                 }`}
               >
-                {t}
+                {t === "prisma" ? "anthony" : "ameba"}
               </button>
             ))}
           </div>
