@@ -335,3 +335,44 @@ export const IconGrid = ({ className = "w-4 h-4" }: IconProps) => (
     <rect x="13" y="13" width="7" height="7" rx="1" />
   </svg>
 );
+
+export const IconCap = ({ className = "w-4 h-4" }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} {...S}>
+    <path d="m12 4 10 5-10 5L2 9l10-5Z" />
+    <path d="M6.5 11.2V15c0 1.4 2.5 2.8 5.5 2.8s5.5-1.4 5.5-2.8v-3.8" />
+    <path d="M22 9v5" />
+  </svg>
+);
+
+export const IconChat = ({ className = "w-4 h-4" }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} {...S}>
+    <path d="M21 12a8 8 0 0 1-8 8H4l2.2-2.6A8 8 0 1 1 21 12Z" />
+    <path d="M8.5 10.5h7M8.5 13.5h4.5" />
+  </svg>
+);
+
+export const IconSend = ({ className = "w-4 h-4" }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} {...S}>
+    <path d="M21 3 10.5 13.5M21 3l-7 18-3.5-7.5L3 10l18-7Z" />
+  </svg>
+);
+
+export const IconChevronRight = ({ className = "w-4 h-4" }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} {...S}>
+    <path d="m9 6 6 6-6 6" />
+  </svg>
+);
+
+export const IconSpark = ({ className = "w-4 h-4" }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} {...S}>
+    <path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" />
+  </svg>
+);
+
+export const IconBook = ({ className = "w-4 h-4" }: IconProps) => (
+  <svg viewBox="0 0 24 24" className={className} {...S}>
+    <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15Z" />
+    <path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5" />
+    <path d="M8.5 7.5h7" />
+  </svg>
+);

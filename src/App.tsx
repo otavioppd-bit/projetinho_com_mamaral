@@ -2,9 +2,11 @@ import { useCallback, useState } from "react";
 import { analyzeDataset, type Dataset } from "./lib/analyze";
 import { IntakeView, PipelineView } from "./components/intake";
 import { Dashboard } from "./components/dashboard";
-import { LogoMark } from "./components/ui";
+import { Academy } from "./components/academy";
+import { LogoMark, IconTable, IconCap } from "./components/ui";
 
 type View = "intake" | "pipeline" | "dashboard";
+type Area = "console" | "academy";
 
 /* partículas ambientes com posições fixas (sem aleatoriedade por render) */
 const MOTES = [
@@ -60,7 +62,13 @@ function Background() {
 
 export default function App() {
   const [view, setView] = useState<View>("intake");
+  const [area, setArea] = useState<Area>("console");
   const [ds, setDs] = useState<Dataset | null>(null);
+
+  const openArea = (a: Area) => {
+    setArea(a);
+    window.scrollTo({ top: 0 });
+  };
 
   const handleAnalyze = useCallback((text: string, name: string): string | null => {
     try {
@@ -98,14 +106,37 @@ export default function App() {
               data engine
             </span>
           </div>
+
+          <nav className="ml-3 sm:ml-6 flex items-center gap-1 rounded-lg border border-line bg-panel/70 p-1">
+            {(
+              [
+                { id: "console", label: "console", Icon: IconTable },
+                { id: "academy", label: "analytics", Icon: IconCap },
+              ] as { id: Area; label: string; Icon: typeof IconTable }[]
+            ).map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                onClick={() => openArea(id)}
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] border transition-all ${
+                  area === id
+                    ? "bg-teal/[0.13] text-tealhi border-teal/35"
+                    : "text-dim border-transparent hover:text-mut hover:bg-panel2"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">{label}</span>
+              </button>
+            ))}
+          </nav>
+
           <div className="ml-auto flex items-center gap-4">
-            <span className="hidden md:flex items-center gap-2 font-mono text-[11px] text-mut">
+            <span className="hidden lg:flex items-center gap-2 font-mono text-[11px] text-mut">
               <span className="w-1.5 h-1.5 rounded-full bg-teal pulse-dot inline-block" />
               motor local · online
             </span>
-            <span className="hidden md:block w-px h-5 bg-line" />
-            <span className="font-mono text-[11px] text-dim">v2.4</span>
-            {view !== "intake" && (
+            <span className="hidden lg:block w-px h-5 bg-line" />
+            <span className="font-mono text-[11px] text-dim hidden sm:inline">v2.4</span>
+            {area === "console" && view !== "intake" && (
               <button
                 onClick={reset}
                 className="font-mono text-[10px] uppercase tracking-widest text-dim hover:text-teal transition-colors"
@@ -118,9 +149,21 @@ export default function App() {
       </header>
 
       <main className="flex-1">
-        {view === "intake" && <IntakeView onAnalyze={handleAnalyze} />}
-        {view === "pipeline" && ds && <PipelineView ds={ds} onDone={pipelineDone} />}
-        {view === "dashboard" && ds && <Dashboard ds={ds} onNew={reset} />}
+        {area === "academy" ? (
+          <Academy
+            ds={ds}
+            onOpenConsole={() => {
+              setArea("console");
+              window.scrollTo({ top: 0 });
+            }}
+          />
+        ) : (
+          <>
+            {view === "intake" && <IntakeView onAnalyze={handleAnalyze} />}
+            {view === "pipeline" && ds && <PipelineView ds={ds} onDone={pipelineDone} />}
+            {view === "dashboard" && ds && <Dashboard ds={ds} onNew={reset} />}
+          </>
+        )}
       </main>
 
       <footer className="relative z-10 border-t border-line">
