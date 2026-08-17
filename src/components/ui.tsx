@@ -189,7 +189,7 @@ export function QualityRing({ score, size = 116 }: { score: number; size?: numbe
   const r = size / 2 - 9;
   const c = 2 * Math.PI * r;
   const [offset, setOffset] = useState(c);
-  const color = score >= 90 ? "#3edcb4" : score >= 75 ? "#f4b860" : "#f2796b";
+  const color = score >= 90 ? "var(--color-teal)" : score >= 75 ? "var(--color-amber)" : "var(--color-coral)";
   useEffect(() => {
     const id = requestAnimationFrame(() => setOffset(c * (1 - score / 100)));
     return () => cancelAnimationFrame(id);
@@ -234,11 +234,11 @@ const S = {
 
 export const LogoMark = ({ className = "w-7 h-7" }: IconProps) => (
   <svg viewBox="0 0 32 32" className={className} {...S}>
-    <path d="M16 4 29 27H3L16 4Z" stroke="#3edcb4" strokeWidth="2" />
-    <path d="M16 13v14" stroke="#3edcb4" strokeWidth="1.4" opacity="0.7" />
-    <path d="M3 17h6" stroke="#f4b860" strokeWidth="1.6" />
-    <path d="M20 22l8-5" stroke="#66b7f0" strokeWidth="1.6" />
-    <path d="M20 25l9 2" stroke="#f2796b" strokeWidth="1.6" />
+    <path d="M16 4 29 27H3L16 4Z" stroke="var(--color-teal)" strokeWidth="2" />
+    <path d="M16 13v14" stroke="var(--color-teal)" strokeWidth="1.4" opacity="0.7" />
+    <path d="M3 17h6" stroke="var(--color-amber)" strokeWidth="1.6" />
+    <path d="M20 22l8-5" stroke="var(--color-sky)" strokeWidth="1.6" />
+    <path d="M20 25l9 2" stroke="var(--color-coral)" strokeWidth="1.6" />
   </svg>
 );
 

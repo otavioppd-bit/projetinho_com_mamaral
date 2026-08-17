@@ -15,6 +15,10 @@
   --color-amber: #f4b860;
   --color-coral: #f2796b;
   --color-sky: #66b7f0;
+  --color-mint: #9be07a;
+  --color-vio: #c79bf2;
+  --color-sand: #e3c992;
+  --color-steel: #7fd4c0;
 
   --font-display: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
@@ -258,10 +262,129 @@ body::after {
 .recharts-cartesian-axis-tick text {
   font-family: var(--font-mono);
   font-size: 10px;
-  fill: #5e7770;
+  fill: var(--color-dim);
 }
 .recharts-label-list text {
   font-family: var(--font-mono);
   font-size: 10px;
-  fill: #8fa9a1;
+  fill: var(--color-mut);
+}
+
+/* =====================================================================
+   THEME · AMEBA — midnight control room
+   Troca o skin completo via tokens: mesmo app, outra atmosfera.
+   ===================================================================== */
+
+[data-theme="ameba"] {
+  --color-abyss: #00052e;
+  --color-panel: #060d42;
+  --color-panel2: #0a1249;
+  --color-raise: #0e1755;
+  --color-line: #262e66;
+  --color-line2: #4f5166;
+  --color-ink: #ffffff;
+  --color-mut: #9296bd;
+  --color-dim: #6b6b83;
+  --color-teal: #3f5bff;
+  --color-tealhi: #34fcff;
+  --color-amber: #f4b860;
+  --color-coral: #ff6b7d;
+  --color-sky: #7aa5ff;
+  --color-mint: #59f3d8;
+  --color-vio: #9aa2ff;
+  --color-sand: #afb4db;
+  --color-steel: #5e8bff;
+  --font-display: "Hanken Grotesk", "Open Sauce Sans", system-ui, sans-serif;
+  --font-body: "Open Sauce Sans", "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+}
+
+/* assinatura tipográfica: display em peso 300 com tracking negativo */
+[data-theme="ameba"] .font-display {
+  font-weight: 300 !important;
+  letter-spacing: -0.019em;
+}
+
+/* superfícies sem sombra, raios contidos (4–8px) */
+[data-theme="ameba"] .card,
+[data-theme="ameba"] .card-static {
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(10, 18, 73, 0.55), rgba(6, 13, 66, 0.92));
+}
+[data-theme="ameba"] .card:hover {
+  border-color: rgba(63, 91, 255, 0.45);
+  box-shadow: none;
+}
+[data-theme="ameba"] .tip {
+  border-radius: 4px;
+  background: rgba(3, 7, 40, 0.97);
+}
+
+/* CTA único preenchido: signal blue */
+[data-theme="ameba"] .btn-teal {
+  background: #0428cb;
+  border-color: #0428cb;
+  color: #ffffff;
+}
+[data-theme="ameba"] .btn-teal:hover {
+  background: #0a35e8;
+  box-shadow: 0 10px 30px -12px rgba(4, 40, 203, 0.85);
+}
+[data-theme="ameba"] .btn-ghost:hover {
+  border-color: rgba(63, 91, 255, 0.55);
+  background: rgba(63, 91, 255, 0.08);
+}
+
+/* ambiente: wash violeta radial no lugar da grade */
+[data-theme="ameba"] body::before {
+  background-image:
+    radial-gradient(ellipse 85% 62% at 50% -6%, rgba(6, 16, 90, 0.95), transparent 72%),
+    radial-gradient(ellipse 46% 38% at 88% 112%, rgba(4, 40, 203, 0.28), transparent 70%),
+    radial-gradient(ellipse 40% 34% at 6% 96%, rgba(52, 252, 255, 0.06), transparent 70%);
+  background-size: auto;
+  mask-image: none;
+}
+[data-theme="ameba"] .mote {
+  background: rgba(52, 252, 255, 0.4);
+}
+[data-theme="ameba"] ::selection {
+  background: rgba(52, 252, 255, 0.85);
+  color: #00052e;
+}
+[data-theme="ameba"] * {
+  scrollbar-color: #2c3470 transparent;
+}
+[data-theme="ameba"] *::-webkit-scrollbar-thumb {
+  background: #2c3470;
+}
+
+/* glows do fundo (controlados por classe para trocar com o tema) */
+.bg-glow-1 { background: radial-gradient(circle, rgba(62, 220, 180, 0.12), transparent 65%); }
+.bg-glow-2 { background: radial-gradient(circle, rgba(244, 184, 96, 0.085), transparent 65%); }
+.bg-glow-3 { background: radial-gradient(circle, rgba(102, 183, 240, 0.06), transparent 65%); }
+[data-theme="ameba"] .bg-glow-1 { background: radial-gradient(circle, rgba(6, 16, 90, 0.9), transparent 65%); }
+[data-theme="ameba"] .bg-glow-2 { background: radial-gradient(circle, rgba(4, 40, 203, 0.32), transparent 65%); }
+[data-theme="ameba"] .bg-glow-3 { background: radial-gradient(circle, rgba(52, 252, 255, 0.07), transparent 65%); }
+
+/* registro claro "product paper": a tabela de dados vira documento branco */
+[data-theme="ameba"] .paper {
+  --color-abyss: #eef0f7;
+  --color-panel: #ffffff;
+  --color-panel2: #f5f6fb;
+  --color-raise: #e9ebf4;
+  --color-line: #dbdcdf;
+  --color-line2: #c2c4d0;
+  --color-ink: #00052e;
+  --color-mut: #4f5166;
+  --color-dim: #6b6b83;
+  --color-teal: #0428cb;
+  --color-tealhi: #0322a8;
+  --color-sky: #3f5bff;
+  --color-amber: #a86a12;
+  --color-coral: #c22f4d;
+  background: #ffffff;
+  border-color: #dbdcdf;
+}
+[data-theme="ameba"] .paper thead tr {
+  background: #f5f6fb;
 }

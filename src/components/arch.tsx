@@ -96,6 +96,16 @@ const FLOWS: Flow[] = [
   { path: "M380,152 C560,152 660,152 858,152", color: "#66b7f0", dur: 4.2, begin: 2, label: "origem do CDN" },
 ];
 
+/* remapeia cores fixas para tokens (troca com o tema ativo) */
+const RECOLOR: Record<string, string> = {
+  "#8fa9a1": "var(--color-mut)",
+  "#3edcb4": "var(--color-teal)",
+  "#f4b860": "var(--color-amber)",
+  "#f2796b": "var(--color-coral)",
+  "#66b7f0": "var(--color-sky)",
+};
+const rc = (c: string) => RECOLOR[c] ?? c;
+
 const LANES = [
   { name: "Entrada", color: "#8fa9a1", desc: "usuário, CDN e proteção de borda" },
   { name: "Sincrono", color: "#3edcb4", desc: "respostas em milissegundos" },
@@ -118,7 +128,7 @@ function ArchDiagram({ selected, onSelect }: { selected: string; onSelect: (id: 
         <div className="flex flex-wrap gap-3">
           {LANES.map((l) => (
             <span key={l.name} className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-widest text-dim" title={l.desc}>
-              <i className="w-2 h-2 rounded-full inline-block" style={{ background: l.color }} /> {l.name}
+              <i className="w-2 h-2 rounded-full inline-block" style={{ background: rc(l.color) }} /> {l.name}
             </span>
           ))}
         </div>
@@ -127,15 +137,15 @@ function ArchDiagram({ selected, onSelect }: { selected: string; onSelect: (id: 
       <div className="overflow-x-auto">
         <svg viewBox="0 0 1040 590" className="w-full min-w-[760px]">
           {/* linhas de telemetria (tracejadas, discretas) */}
-          <path d="M930,184 L930,378" stroke="#5e7770" strokeWidth="1" strokeDasharray="3 6" opacity="0.5" fill="none" />
-          <path d="M860,152 C720,60 560,220 516,376" stroke="#5e7770" strokeWidth="1" strokeDasharray="3 6" opacity="0.4" fill="none" />
-          <text x="940" y="286" className="fill-[#5e7770]" fontSize="9" fontFamily="var(--font-mono)">telemetria</text>
+          <path d="M930,184 L930,378" stroke="var(--color-dim)" strokeWidth="1" strokeDasharray="3 6" opacity="0.5" fill="none" />
+          <path d="M860,152 C720,60 560,220 516,376" stroke="var(--color-dim)" strokeWidth="1" strokeDasharray="3 6" opacity="0.4" fill="none" />
+          <text x="940" y="286" fill="var(--color-dim)" fontSize="9" fontFamily="var(--font-mono)">telemetria</text>
 
           {/* fluxos */}
           {FLOWS.map((fl, i) => (
             <g key={i}>
-              <path d={fl.path} fill="none" stroke={fl.color} strokeWidth="1.4" opacity="0.4" className="dash-march" strokeDasharray="4 10" />
-              <circle r="3.2" fill={fl.color}>
+              <path d={fl.path} fill="none" stroke={rc(fl.color)} strokeWidth="1.4" opacity="0.4" className="dash-march" strokeDasharray="4 10" />
+              <circle r="3.2" fill={rc(fl.color)}>
                 <animateMotion dur={`${fl.dur}s`} begin={`${fl.begin}s`} repeatCount="indefinite" path={fl.path} />
               </circle>
             </g>
@@ -156,15 +166,15 @@ function ArchDiagram({ selected, onSelect }: { selected: string; onSelect: (id: 
               >
                 <rect
                   width="150" height="64" rx="9"
-                  fill={isActive ? "#142522" : "#0c1615"}
-                  stroke={isActive ? n.laneColor : "#1c2f2b"}
+                  fill={isActive ? "var(--color-raise)" : "var(--color-panel)"}
+                  stroke={isActive ? rc(n.laneColor) : "var(--color-line)"}
                   strokeWidth={isActive ? 1.6 : 1}
                   style={{ transition: "stroke .25s ease, fill .25s ease" }}
                 />
-                <rect x="0" y="14" width="3" height="36" rx="1.5" fill={n.laneColor} opacity={isActive ? 1 : 0.65} />
-                <text x="16" y="26" fontSize="12.5" fontWeight="700" fill="#e9f4f0" fontFamily="var(--font-display)">{n.name}</text>
-                <text x="16" y="43" fontSize="9" fill="#8fa9a1" fontFamily="var(--font-mono)">{n.tech}</text>
-                <text x="16" y="56" fontSize="8" fill="#5e7770" fontFamily="var(--font-mono)" letterSpacing="1.5" style={{ textTransform: "uppercase" }}>
+                <rect x="0" y="14" width="3" height="36" rx="1.5" fill={rc(n.laneColor)} opacity={isActive ? 1 : 0.65} />
+                <text x="16" y="26" fontSize="12.5" fontWeight="700" fill="var(--color-ink)" fontFamily="var(--font-display)">{n.name}</text>
+                <text x="16" y="43" fontSize="9" fill="var(--color-mut)" fontFamily="var(--font-mono)">{n.tech}</text>
+                <text x="16" y="56" fontSize="8" fill="var(--color-dim)" fontFamily="var(--font-mono)" letterSpacing="1.5" style={{ textTransform: "uppercase" }}>
                   {n.lane}
                 </text>
               </g>
@@ -177,7 +187,7 @@ function ArchDiagram({ selected, onSelect }: { selected: string; onSelect: (id: 
       {activeNode && (
         <div key={activeNode.id} className="mt-4 rounded-lg border border-line bg-abyss/50 p-4 fade-line grid md:grid-cols-3 gap-4">
           <div>
-            <p className="font-mono text-[9px] uppercase tracking-[0.2em] mb-1.5" style={{ color: activeNode.laneColor }}>papel</p>
+            <p className="font-mono text-[9px] uppercase tracking-[0.2em] mb-1.5" style={{ color: rc(activeNode.laneColor) }}>papel</p>
             <p className="text-[12.5px] text-mut leading-relaxed">{activeNode.role}</p>
           </div>
           <div>
@@ -218,7 +228,7 @@ function Slider({
 
 function Gauge({ label, pct, note }: { label: string; pct: number; note: string }) {
   const p = Math.min(1, pct);
-  const color = p > 0.85 ? "#f2796b" : p > 0.65 ? "#f4b860" : "#3edcb4";
+  const color = p > 0.85 ? "var(--color-coral)" : p > 0.65 ? "var(--color-amber)" : "var(--color-teal)";
   return (
     <div>
       <div className="flex justify-between items-baseline mb-1">

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { analyzeDataset, type Dataset } from "./lib/analyze";
 import { IntakeView, PipelineView } from "./components/intake";
 import { Dashboard } from "./components/dashboard";
@@ -27,21 +27,27 @@ const MOTES = [
   { left: "77%", top: "88%", s: 3, d: -3.5, dur: 9 },
 ];
 
-function Background() {
+/* campo extra de partículas para o tema ameba (esfera atmosférica) */
+const AMEBA_MOTES = [
+  { left: "8%", top: "30%", s: 2.5, d: -1, dur: 8 }, { left: "15%", top: "55%", s: 2, d: -3, dur: 10 },
+  { left: "22%", top: "20%", s: 3, d: -5, dur: 9 }, { left: "30%", top: "70%", s: 2, d: -2, dur: 12 },
+  { left: "38%", top: "34%", s: 2.5, d: -7, dur: 8.5 }, { left: "45%", top: "80%", s: 2, d: -4, dur: 11 },
+  { left: "52%", top: "16%", s: 3, d: -6, dur: 9.5 }, { left: "58%", top: "62%", s: 2, d: -1.5, dur: 10 },
+  { left: "66%", top: "28%", s: 2.5, d: -8, dur: 8 }, { left: "74%", top: "52%", s: 2, d: -3.5, dur: 12 },
+  { left: "82%", top: "22%", s: 3, d: -5.5, dur: 9 }, { left: "90%", top: "60%", s: 2, d: -2.5, dur: 11 },
+  { left: "95%", top: "38%", s: 2.5, d: -4.5, dur: 8.5 }, { left: "34%", top: "12%", s: 2, d: -6.5, dur: 10.5 },
+  { left: "62%", top: "88%", s: 2.5, d: -0.5, dur: 9 }, { left: "18%", top: "86%", s: 2, d: -7.5, dur: 11.5 },
+];
+
+function Background({ theme }: { theme: "prisma" | "ameba" }) {
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden>
+      <div className="glow-slow absolute -top-44 -left-44 w-[660px] h-[660px] rounded-full blur-3xl bg-glow-1" />
       <div
-        className="glow-slow absolute -top-44 -left-44 w-[660px] h-[660px] rounded-full blur-3xl"
-        style={{ background: "radial-gradient(circle, rgba(62,220,180,0.12), transparent 65%)" }}
+        className="glow-slow absolute -bottom-56 -right-44 w-[760px] h-[760px] rounded-full blur-3xl bg-glow-2"
+        style={{ animationDelay: "-5.5s" }}
       />
-      <div
-        className="glow-slow absolute -bottom-56 -right-44 w-[760px] h-[760px] rounded-full blur-3xl"
-        style={{ background: "radial-gradient(circle, rgba(244,184,96,0.085), transparent 65%)", animationDelay: "-5.5s" }}
-      />
-      <div
-        className="absolute top-1/3 right-[18%] w-[440px] h-[440px] rounded-full blur-3xl"
-        style={{ background: "radial-gradient(circle, rgba(102,183,240,0.06), transparent 65%)" }}
-      />
+      <div className="absolute top-1/3 right-[18%] w-[440px] h-[440px] rounded-full blur-3xl bg-glow-3" />
       {MOTES.map((m, i) => (
         <span
           key={i}
@@ -53,10 +59,26 @@ function Background() {
             height: m.s,
             animationDelay: `${m.d}s`,
             animationDuration: `${m.dur}s`,
-            opacity: 0.5,
+            opacity: theme === "ameba" ? 0.28 : 0.5,
           }}
         />
       ))}
+      {theme === "ameba" &&
+        AMEBA_MOTES.map((m, i) => (
+          <span
+            key={`a${i}`}
+            className="mote"
+            style={{
+              left: m.left,
+              top: m.top,
+              width: m.s,
+              height: m.s,
+              animationDelay: `${m.d}s`,
+              animationDuration: `${m.dur}s`,
+              opacity: 0.75,
+            }}
+          />
+        ))}
     </div>
   );
 }
@@ -65,6 +87,22 @@ export default function App() {
   const [view, setView] = useState<View>("intake");
   const [area, setArea] = useState<Area>("console");
   const [ds, setDs] = useState<Dataset | null>(null);
+
+  /* versão visual: prisma (original) ou ameba (midnight control room) */
+  const [theme, setTheme] = useState<"prisma" | "ameba">(() => {
+    const saved = typeof localStorage !== "undefined" ? localStorage.getItem("prisma-versao") : null;
+    const t = saved === "ameba" ? ("ameba" as const) : ("prisma" as const);
+    if (typeof document !== "undefined") document.documentElement.dataset.theme = t;
+    return t;
+  });
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("prisma-versao", theme);
+    document.title =
+      theme === "ameba"
+        ? "AMEBA · Control room de dados"
+        : "PRISMA · Análise de dados no navegador";
+  }, [theme]);
 
   const openArea = (a: Area) => {
     setArea(a);
@@ -96,16 +134,35 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col relative">
-      <Background />
+      <Background theme={theme} />
 
       <header className="sticky top-0 z-40 border-b border-line bg-abyss/85 backdrop-blur-md">
         <div className="max-w-[1280px] mx-auto px-5 md:px-8 h-16 flex items-center gap-3">
           <LogoMark className="w-8 h-8" />
           <div className="leading-none">
-            <span className="font-display font-bold text-[19px] tracking-[0.14em]">PRISMA</span>
-            <span className="hidden sm:block font-mono text-[8.5px] uppercase tracking-[0.3em] text-dim mt-1">
-              data engine
+            <span className="font-display font-bold text-[19px] tracking-[0.14em]">
+              {theme === "ameba" ? "AMEBA" : "PRISMA"}
             </span>
+            <span className="hidden sm:block font-mono text-[8.5px] uppercase tracking-[0.3em] text-dim mt-1">
+              {theme === "ameba" ? "control room" : "data engine"}
+            </span>
+          </div>
+
+          {/* seletor de versão visual */}
+          <div className="ml-2 flex items-center rounded-lg border border-line bg-panel/70 p-1" title="Trocar versão visual">
+            {(["prisma", "ameba"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTheme(t)}
+                className={`px-2 py-1 rounded-md font-mono text-[9px] uppercase tracking-[0.16em] border transition-all ${
+                  theme === t
+                    ? "bg-teal/[0.13] text-tealhi border-teal/35"
+                    : "text-dim border-transparent hover:text-mut"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
           </div>
 
           <nav className="ml-3 sm:ml-6 flex items-center gap-1 rounded-lg border border-line bg-panel/70 p-1">
@@ -163,7 +220,7 @@ export default function App() {
           <ArchitecturePage />
         ) : (
           <>
-            {view === "intake" && <IntakeView onAnalyze={handleAnalyze} />}
+            {view === "intake" && <IntakeView onAnalyze={handleAnalyze} theme={theme} />}
             {view === "pipeline" && ds && <PipelineView ds={ds} onDone={pipelineDone} />}
             {view === "dashboard" && ds && <Dashboard ds={ds} onNew={reset} />}
           </>

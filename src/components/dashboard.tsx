@@ -11,16 +11,16 @@ import {
 import { GeoMap } from "./GeoMap";
 
 const KIND_META = {
-  remove: { icon: IconX, color: "#f2796b", label: "remoção" },
-  impute: { icon: IconCheck, color: "#3edcb4", label: "imputação" },
-  flag: { icon: IconAlert, color: "#f4b860", label: "sinalização" },
-  normalize: { icon: IconWave, color: "#66b7f0", label: "normalização" },
+  remove: { icon: IconX, color: "var(--color-coral)", label: "remoção" },
+  impute: { icon: IconCheck, color: "var(--color-teal)", label: "imputação" },
+  flag: { icon: IconAlert, color: "var(--color-amber)", label: "sinalização" },
+  normalize: { icon: IconWave, color: "var(--color-sky)", label: "normalização" },
 } as const;
 
 const INSIGHT_STYLE = {
-  warn: { color: "#f4b860", tag: "atenção", border: "border-amber/30", bg: "bg-amber/[0.07]" },
-  good: { color: "#3edcb4", tag: "sinal forte", border: "border-teal/30", bg: "bg-teal/[0.07]" },
-  info: { color: "#66b7f0", tag: "leitura", border: "border-sky/30", bg: "bg-sky/[0.07]" },
+  warn: { color: "var(--color-amber)", tag: "atenção", border: "border-amber/30", bg: "bg-amber/[0.07]" },
+  good: { color: "var(--color-teal)", tag: "sinal forte", border: "border-teal/30", bg: "bg-teal/[0.07]" },
+  info: { color: "var(--color-sky)", tag: "leitura", border: "border-sky/30", bg: "bg-sky/[0.07]" },
 } as const;
 
 export function Dashboard({ ds, onNew }: { ds: Dataset; onNew: () => void }) {
@@ -173,7 +173,7 @@ export function Dashboard({ ds, onNew }: { ds: Dataset; onNew: () => void }) {
                   const Icon = m.icon;
                   return (
                     <div key={a.label} className="flex items-center gap-3 rounded-lg border border-line bg-abyss/40 px-3 py-2.5 hover:border-line2 transition-colors">
-                      <span className="w-7 h-7 rounded-md border flex items-center justify-center shrink-0" style={{ borderColor: `${m.color}55`, background: `${m.color}14`, color: m.color }}>
+                      <span className="w-7 h-7 rounded-md border flex items-center justify-center shrink-0" style={{ borderColor: `color-mix(in srgb, ${m.color} 34%, transparent)`, background: `color-mix(in srgb, ${m.color} 8%, transparent)`, color: m.color }}>
                         <Icon className="w-3.5 h-3.5" />
                       </span>
                       <div className="flex-1 min-w-0">
@@ -225,7 +225,7 @@ export function Dashboard({ ds, onNew }: { ds: Dataset; onNew: () => void }) {
           </Reveal>
 
           <Reveal className="col-span-12" delay={200}>
-            <div className="card-static overflow-hidden">
+            <div className="card-static paper overflow-hidden">
               <div className="flex items-center justify-between px-5 pt-4 pb-3">
                 <div>
                   <h3 className="font-display font-semibold text-[16px] tracking-tight">Amostra dos dados limpos</h3>

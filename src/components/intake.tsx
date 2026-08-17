@@ -18,8 +18,10 @@ const STEPS = [
 
 export function IntakeView({
   onAnalyze,
+  theme = "prisma",
 }: {
   onAnalyze: (text: string, name: string) => string | null;
+  theme?: "prisma" | "ameba";
 }) {
   const [tab, setTab] = useState<"arquivo" | "colar">("arquivo");
   const [drag, setDrag] = useState(false);
@@ -36,6 +38,43 @@ export function IntakeView({
   return (
     <div className="relative z-10 max-w-[1280px] mx-auto px-5 md:px-8">
       <div className="grid lg:grid-cols-[1.04fr_1fr] gap-12 lg:gap-16 items-center min-h-[calc(100vh-140px)] py-12 lg:py-8">
+        {/* -------- cards flutuantes (registro ameba) -------- */}
+        {theme === "ameba" && (
+          <>
+            <div
+              className="hidden lg:block absolute right-0 top-4 w-[248px] rounded-lg border border-line2/60 bg-panel p-4 z-20"
+              style={{ animation: "float-y 7.5s ease-in-out infinite" }}
+            >
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-tealhi pulse-dot inline-block" />
+                <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-dim">order update</span>
+              </div>
+              <p className="text-[12.5px] text-ink mt-2 leading-snug">
+                Lote <span className="font-mono text-tealhi">#4821</span> analisado — 342 linhas limpas em 1,2s
+              </p>
+              <p className="font-mono text-[9px] text-dim mt-2">agora · fila 0 · worker 3</p>
+            </div>
+            <div
+              className="hidden lg:block absolute left-[36%] bottom-4 w-[262px] rounded-lg border border-line2/60 bg-panel p-4 z-20"
+              style={{ animation: "float-y 9s ease-in-out infinite", animationDelay: "-3.2s" }}
+            >
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-dim">event summary</p>
+              <div className="mt-2.5 space-y-2">
+                {[
+                  ["12:04:11", "duplicatas removidas · 8", "var(--color-coral)"],
+                  ["12:04:12", "perfilamento concluído · 8 colunas", "var(--color-teal)"],
+                ].map(([t, ev, c]) => (
+                  <div key={t} className="flex items-center gap-2.5">
+                    <span className="w-1.5 h-1.5 rotate-45 inline-block shrink-0" style={{ background: c }} />
+                    <span className="font-mono text-[9.5px] text-dim">{t}</span>
+                    <span className="text-[11.5px] text-mut truncate">{ev}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
         {/* -------- narrativa -------- */}
         <div>
           <p className="font-mono text-xs text-teal tracking-[0.22em] uppercase flex items-center gap-2.5">
@@ -48,7 +87,7 @@ export function IntakeView({
             <span className="text-teal">Ciência sai.</span>
           </h1>
           <p className="text-mut text-base md:text-lg mt-6 max-w-xl leading-relaxed">
-            O PRISMA recebe seu CSV ou JSON, <b className="text-ink font-semibold">higieniza cada célula</b>,
+            O {theme === "ameba" ? "AMEBA" : "PRISMA"} recebe seu CSV ou JSON, <b className="text-ink font-semibold">higieniza cada célula</b>,
             perfila as variáveis e devolve um dossiê visual digno de revista científica —
             sem servidor, sem upload, sem espera.
           </p>

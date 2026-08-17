@@ -46,6 +46,14 @@ const DEMO: Record<string, { value: number; count: number }> = {
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 function heat(t: number): string {
   const e = Math.pow(t, 0.72);
+  const ameba = typeof document !== "undefined" && document.documentElement.dataset.theme === "ameba";
+  if (ameba) {
+    /* midnight → signal blue elétrico */
+    const r = Math.round(lerp(8, 63, e));
+    const g = Math.round(lerp(15, 91, e));
+    const b = Math.round(lerp(70, 255, e));
+    return `rgb(${r},${g},${b})`;
+  }
   const r = Math.round(lerp(16, 124, e));
   const g = Math.round(lerp(29, 245, e));
   const b = Math.round(lerp(27, 214, e));
@@ -172,9 +180,9 @@ export function GeoMap({
                 >
                   <path
                     d={r.path}
-                    fill={empty ? "#0d1716" : heat(t)}
+                    fill={empty ? "var(--color-panel)" : heat(t)}
                     fillOpacity={empty ? 1 : active ? 1 : 0.88}
-                    stroke={active ? "#7cf5d6" : "#1c2f2b"}
+                    stroke={active ? "var(--color-tealhi)" : "var(--color-line)"}
                     strokeWidth={active ? 2 : 1.2}
                     strokeDasharray={empty ? "4 4" : undefined}
                     filter={active ? "url(#mapGlow)" : undefined}
@@ -187,7 +195,15 @@ export function GeoMap({
                     fontSize="11"
                     fontWeight={700}
                     fontFamily="var(--font-display)"
-                    fill={t > 0.55 ? "#062019" : "#8fa9a1"}
+                    fill={
+                      document.documentElement.dataset.theme === "ameba"
+                        ? t > 0.3
+                          ? "var(--color-ink)"
+                          : "var(--color-dim)"
+                        : t > 0.55
+                          ? "var(--color-abyss)"
+                          : "var(--color-mut)"
+                    }
                     pointerEvents="none"
                   >
                     {r.label}

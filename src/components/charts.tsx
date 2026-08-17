@@ -8,9 +8,23 @@ import type { ColumnProfile, TimePoint } from "../lib/analyze";
 import { fmtSmart } from "../lib/analyze";
 import { truncate } from "./ui";
 
-export const PALETTE = ["#3edcb4", "#f4b860", "#f2796b", "#66b7f0", "#9be07a", "#c79bf2", "#e3c992", "#7fd4c0"];
+/* Paleta via tokens — reage ao tema ativo (Prisma / Ameba) */
+export const PALETTE = [
+  "var(--color-teal)",
+  "var(--color-amber)",
+  "var(--color-coral)",
+  "var(--color-sky)",
+  "var(--color-mint)",
+  "var(--color-vio)",
+  "var(--color-sand)",
+  "var(--color-steel)",
+];
 
-const AXIS = { stroke: "transparent", tickLine: false as const, axisLine: { stroke: "#1c2f2b" } };
+const GRID = "var(--color-line)";
+const CURSOR = "var(--color-line2)";
+const MONO = "var(--font-mono)";
+
+const AXIS = { stroke: "transparent", tickLine: false as const, axisLine: { stroke: GRID } };
 
 function ChartTip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -19,7 +33,7 @@ function ChartTip({ active, payload, label }: any) {
       {label !== undefined && label !== "" && <div className="text-dim mb-1">{label}</div>}
       {payload.map((p: any, i: number) => (
         <div key={i} className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-[3px] inline-block shrink-0" style={{ background: p.color || p.fill || "#3edcb4" }} />
+          <span className="w-2 h-2 rounded-[3px] inline-block shrink-0" style={{ background: p.color || p.fill || "var(--color-teal)" }} />
           <span className="text-mut">{p.name}:</span>
           <span className="font-semibold">
             {typeof p.value === "number"
@@ -78,13 +92,13 @@ export function Histogram({ profile }: { profile: ColumnProfile | undefined }) {
       <div className="h-[240px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={bins} margin={{ top: 8, right: 8, left: -12, bottom: 0 }} barCategoryGap="12%">
-            <CartesianGrid vertical={false} stroke="#1c2f2b" strokeDasharray="3 6" />
+            <CartesianGrid vertical={false} stroke={GRID} strokeDasharray="3 6" />
             <XAxis dataKey="label" {...AXIS} interval="preserveStartEnd" minTickGap={30} />
             <YAxis {...AXIS} width={54} tickFormatter={(v: number) => fmtSmart(v)} />
-            <Tooltip content={<ChartTip />} cursor={{ fill: "rgba(62,220,180,0.06)" }} />
-            <ReferenceLine x={meanBin} stroke="#f4b860" strokeDasharray="5 4" label={{ value: "média", fill: "#f4b860", fontSize: 10, fontFamily: "JetBrains Mono", position: "insideTopRight" }} />
-            <ReferenceLine x={medBin} stroke="#7cf5d6" strokeDasharray="5 4" label={{ value: "mediana", fill: "#7cf5d6", fontSize: 10, fontFamily: "JetBrains Mono", position: "insideTopLeft" }} />
-            <Bar dataKey="count" name="frequência" fill="#3edcb4" fillOpacity={0.82} radius={[3, 3, 0, 0]} maxBarSize={42} />
+            <Tooltip content={<ChartTip />} cursor={{ fill: "color-mix(in srgb, var(--color-teal) 6%, transparent)" }} />
+            <ReferenceLine x={meanBin} stroke="var(--color-amber)" strokeDasharray="5 4" label={{ value: "média", fill: "var(--color-amber)", fontSize: 10, fontFamily: MONO, position: "insideTopRight" }} />
+            <ReferenceLine x={medBin} stroke="var(--color-tealhi)" strokeDasharray="5 4" label={{ value: "mediana", fill: "var(--color-tealhi)", fontSize: 10, fontFamily: MONO, position: "insideTopLeft" }} />
+            <Bar dataKey="count" name="frequência" fill="var(--color-teal)" fillOpacity={0.82} radius={[3, 3, 0, 0]} maxBarSize={42} />
           </BarChart>
         </ResponsiveContainer>
       </div>
@@ -161,36 +175,28 @@ export function CategoryBars({ profile }: { profile: ColumnProfile | undefined }
         <span className="font-mono text-[9px] text-dim ml-auto">{(profile?.unique ?? 0)} categorias únicas</span>
       </div>
       <div className="flex-1 min-h-[200px]" style={{ minHeight: Math.max(200, data.length * 34 + 10) }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ top: 0, right: 42, left: 0, bottom: 0 }}>
-          <CartesianGrid horizontal={false} stroke="#1c2f2b" strokeDasharray="3 6" />
-          <XAxis type="number" hide />
-          <YAxis
-            type="category"
-            dataKey="value"
-            width={112}
-            tick={{ fill: "#8fa9a1", fontSize: 10.5, fontFamily: "JetBrains Mono" }}
-            tickLine={false}
-            axisLine={{ stroke: "#1c2f2b" }}
-          />
-          <Tooltip content={<ChartTip />} cursor={{ fill: "rgba(62,220,180,0.05)" }} />
-          <Bar
-            dataKey={mode === "pct" ? "pct" : "count"}
-            name={mode === "pct" ? "% do total" : "registros"}
-            fill="#3edcb4"
-            fillOpacity={0.85}
-            radius={[0, 3, 3, 0]}
-            barSize={17}
-            isAnimationActive
-          >
-            <LabelList
-              dataKey={mode === "pct" ? "pct" : "count"}
-              position="right"
-              formatter={(v: any) => (mode === "pct" ? `${Number(v).toFixed(0)}%` : Number(v).toLocaleString("pt-BR"))}
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ top: 0, right: 42, left: 0, bottom: 0 }}>
+            <CartesianGrid horizontal={false} stroke={GRID} strokeDasharray="3 6" />
+            <XAxis type="number" hide />
+            <YAxis
+              type="category"
+              dataKey="value"
+              width={112}
+              tick={{ fill: "var(--color-mut)", fontSize: 10.5, fontFamily: MONO }}
+              tickLine={false}
+              axisLine={{ stroke: GRID }}
             />
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+            <Tooltip content={<ChartTip />} cursor={{ fill: "color-mix(in srgb, var(--color-teal) 5%, transparent)" }} />
+            <Bar dataKey={mode} name={mode === "count" ? "registros" : "%"} fill="var(--color-teal)" fillOpacity={0.85} radius={[0, 3, 3, 0]} barSize={17} isAnimationActive={false}>
+              <LabelList
+                dataKey={mode === "count" ? "count" : "pct"}
+                position="right"
+                formatter={(v: any) => (mode === "count" ? Number(v).toLocaleString("pt-BR") : `${Number(v).toFixed(0)}%`)}
+              />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
@@ -323,22 +329,22 @@ export function ScatterFit({ xName, yName, xs, ys }: { xName: string; yName: str
       <div className="h-[222px]">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 10, right: 12, left: -6, bottom: 2 }}>
-            <CartesianGrid stroke="#1c2f2b" strokeDasharray="3 6" />
+            <CartesianGrid stroke={GRID} strokeDasharray="3 6" />
             <XAxis type="number" dataKey="x" name={xName} domain={["auto", "auto"]} {...AXIS} tickFormatter={(v: number) => fmtSmart(v)} tickCount={7} />
-            <YAxis type="number" dataKey="y" name={yName} domain={["auto", "auto"]} width={56} tickFormatter={(v: number) => fmtSmart(v)} tickLine={false} axisLine={{ stroke: "#1c2f2b" }} />
-            <Tooltip content={<ChartTip />} cursor={{ strokeDasharray: "4 4", stroke: "#2b463f" }} />
+            <YAxis type="number" dataKey="y" name={yName} domain={["auto", "auto"]} width={56} tickFormatter={(v: number) => fmtSmart(v)} tickLine={false} axisLine={{ stroke: GRID }} />
+            <Tooltip content={<ChartTip />} cursor={{ strokeDasharray: "4 4", stroke: CURSOR }} />
             {showFit && (
               <ReferenceLine
                 segment={[
                   { x: model.xmin, y: model.slope * model.xmin + model.intercept },
                   { x: model.xmax, y: model.slope * model.xmax + model.intercept },
                 ]}
-                stroke="#f4b860"
+                stroke="var(--color-amber)"
                 strokeWidth={2}
                 strokeDasharray="7 5"
               />
             )}
-            <Scatter data={model.pts} fill="#3edcb4" fillOpacity={0.62} />
+            <Scatter data={model.pts} fill="var(--color-teal)" fillOpacity={0.62} />
           </ScatterChart>
         </ResponsiveContainer>
       </div>
@@ -362,11 +368,11 @@ export function TimeSeries({ points, yName }: { points: TimePoint[]; yName: stri
         <AreaChart data={points} margin={{ top: 8, right: 12, left: -4, bottom: 0 }}>
           <defs>
             <linearGradient id="tsGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#3edcb4" stopOpacity={0.34} />
-              <stop offset="100%" stopColor="#3edcb4" stopOpacity={0.01} />
+              <stop offset="0%" stopColor="var(--color-teal)" stopOpacity={0.34} />
+              <stop offset="100%" stopColor="var(--color-teal)" stopOpacity={0.01} />
             </linearGradient>
           </defs>
-          <CartesianGrid vertical={false} stroke="#1c2f2b" strokeDasharray="3 6" />
+          <CartesianGrid vertical={false} stroke={GRID} strokeDasharray="3 6" />
           <XAxis dataKey="t" {...AXIS} minTickGap={36} />
           <YAxis {...AXIS} width={56} tickFormatter={(v: number) => fmtSmart(v)} domain={["auto", "auto"]} />
           <Tooltip
@@ -386,18 +392,18 @@ export function TimeSeries({ points, yName }: { points: TimePoint[]; yName: stri
           />
           <ReferenceLine
             y={avg}
-            stroke="#f4b860"
+            stroke="var(--color-amber)"
             strokeDasharray="6 5"
-            label={{ value: `média ${fmtSmart(avg)}`, fill: "#f4b860", fontSize: 10, fontFamily: "JetBrains Mono", position: "insideTopRight" }}
+            label={{ value: `média ${fmtSmart(avg)}`, fill: "var(--color-amber)", fontSize: 10, fontFamily: MONO, position: "insideTopRight" }}
           />
-          <Area type="monotone" dataKey="v" name={yName} stroke="#3edcb4" strokeWidth={2.2} fill="url(#tsGrad)" activeDot={{ r: 4, fill: "#7cf5d6", stroke: "#06201a" }} />
+          <Area type="monotone" dataKey="v" name={yName} stroke="var(--color-teal)" strokeWidth={2.2} fill="url(#tsGrad)" activeDot={{ r: 4, fill: "var(--color-tealhi)", stroke: "var(--color-abyss)" }} />
           {points.length > 14 && (
             <Brush
               dataKey="t"
               height={24}
               travellerWidth={9}
-              stroke="#2b463f"
-              fill="#0a1413"
+              stroke={CURSOR}
+              fill="var(--color-abyss)"
             />
           )}
         </AreaChart>
@@ -444,18 +450,18 @@ export function BoxPlots({ profiles }: { profiles: ColumnProfile[] }) {
           const active = hover === i;
           return (
             <g key={p.name} onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} style={{ cursor: "default" }}>
-              <rect x={0} y={top + i * rowH} width={W} height={rowH} fill={active ? "rgba(62,220,180,0.045)" : "transparent"} rx={6} />
-              <text x={12} y={cy - 3} fill={active ? "#e9f4f0" : "#8fa9a1"} fontSize="11.5" fontFamily="JetBrains Mono" fontWeight={600}>
+              <rect x={0} y={top + i * rowH} width={W} height={rowH} fill={active ? "color-mix(in srgb, var(--color-teal) 4.5%, transparent)" : "transparent"} rx={6} />
+              <text x={12} y={cy - 3} fill={active ? "var(--color-ink)" : "var(--color-mut)"} fontSize="11.5" fontFamily={MONO} fontWeight={600}>
                 {truncate(p.name, 18)}
               </text>
-              <text x={12} y={cy + 12} fill="#5e7770" fontSize="9" fontFamily="JetBrains Mono">
+              <text x={12} y={cy + 12} fill="var(--color-dim)" fontSize="9" fontFamily={MONO}>
                 n={vals.length} · {p.outlierCount} outl.
               </text>
               {/* bigodes */}
-              <line x1={sc(wLo)} x2={sc(p.q1!)} y1={cy} y2={cy} stroke="#2b463f" strokeWidth={1.4} />
-              <line x1={sc(p.q3!)} x2={sc(wHi)} y1={cy} y2={cy} stroke="#2b463f" strokeWidth={1.4} />
-              <line x1={sc(wLo)} x2={sc(wLo)} y1={cy - 7} y2={cy + 7} stroke="#2b463f" strokeWidth={1.4} />
-              <line x1={sc(wHi)} x2={sc(wHi)} y1={cy - 7} y2={cy + 7} stroke="#2b463f" strokeWidth={1.4} />
+              <line x1={sc(wLo)} x2={sc(p.q1!)} y1={cy} y2={cy} stroke={CURSOR} strokeWidth={1.4} />
+              <line x1={sc(p.q3!)} x2={sc(wHi)} y1={cy} y2={cy} stroke={CURSOR} strokeWidth={1.4} />
+              <line x1={sc(wLo)} x2={sc(wLo)} y1={cy - 7} y2={cy + 7} stroke={CURSOR} strokeWidth={1.4} />
+              <line x1={sc(wHi)} x2={sc(wHi)} y1={cy - 7} y2={cy + 7} stroke={CURSOR} strokeWidth={1.4} />
               {/* caixa */}
               <rect
                 x={sc(p.q1!)}
@@ -463,14 +469,14 @@ export function BoxPlots({ profiles }: { profiles: ColumnProfile[] }) {
                 width={Math.max(2, sc(p.q3!) - sc(p.q1!))}
                 height={24}
                 rx={4}
-                fill={active ? "rgba(62,220,180,0.28)" : "rgba(62,220,180,0.16)"}
-                stroke="#3edcb4"
+                fill={active ? "color-mix(in srgb, var(--color-teal) 28%, transparent)" : "color-mix(in srgb, var(--color-teal) 16%, transparent)"}
+                stroke="var(--color-teal)"
                 strokeWidth={1.3}
               />
-              <line x1={sc(p.median!)} x2={sc(p.median!)} y1={cy - 12} y2={cy + 12} stroke="#f4b860" strokeWidth={2.2} />
+              <line x1={sc(p.median!)} x2={sc(p.median!)} y1={cy - 12} y2={cy + 12} stroke="var(--color-amber)" strokeWidth={2.2} />
               {/* outliers */}
               {outliers.map((v, j) => (
-                <circle key={j} cx={sc(v)} cy={cy + ((j % 3) - 1) * 4} r={2.6} fill="#f2796b" fillOpacity={0.85} />
+                <circle key={j} cx={sc(v)} cy={cy + ((j % 3) - 1) * 4} r={2.6} fill="var(--color-coral)" fillOpacity={0.85} />
               ))}
             </g>
           );
@@ -501,8 +507,10 @@ export function Heatmap({ cols, matrix }: { cols: string[]; matrix: number[][] }
   const H = topH + n * cell + 6;
 
   const colorOf = (r: number) => {
-    const a = 0.1 + Math.abs(r) * 0.8;
-    return r >= 0 ? `rgba(62,220,180,${a})` : `rgba(242,121,107,${a})`;
+    const a = Math.round((0.1 + Math.abs(r) * 0.8) * 100);
+    return r >= 0
+      ? `color-mix(in srgb, var(--color-teal) ${a}%, transparent)`
+      : `color-mix(in srgb, var(--color-coral) ${a}%, transparent)`;
   };
 
   return (
@@ -513,9 +521,9 @@ export function Heatmap({ cols, matrix }: { cols: string[]; matrix: number[][] }
             key={`t${j}`}
             x={labelW + j * cell + cell / 2 + 4}
             y={topH - 10}
-            fill={hover?.j === j ? "#e9f4f0" : "#5e7770"}
+            fill={hover?.j === j ? "var(--color-ink)" : "var(--color-dim)"}
             fontSize="9.5"
-            fontFamily="JetBrains Mono"
+            fontFamily={MONO}
             transform={`rotate(-40 ${labelW + j * cell + cell / 2 + 4} ${topH - 10})`}
             textAnchor="start"
           >
@@ -527,9 +535,9 @@ export function Heatmap({ cols, matrix }: { cols: string[]; matrix: number[][] }
             key={`l${i}`}
             x={labelW - 10}
             y={topH + i * cell + cell / 2 + 3.5}
-            fill={hover?.i === i ? "#e9f4f0" : "#8fa9a1"}
+            fill={hover?.i === i ? "var(--color-ink)" : "var(--color-mut)"}
             fontSize="10"
-            fontFamily="JetBrains Mono"
+            fontFamily={MONO}
             textAnchor="end"
           >
             {truncate(r, 15)}
@@ -547,7 +555,7 @@ export function Heatmap({ cols, matrix }: { cols: string[]; matrix: number[][] }
                   height={cell - 3}
                   rx={5}
                   fill={colorOf(r)}
-                  stroke={active ? "#e9f4f0" : "transparent"}
+                  stroke={active ? "var(--color-ink)" : "transparent"}
                   strokeWidth={1.2}
                 />
                 {n <= 8 && i !== j && (
@@ -556,9 +564,9 @@ export function Heatmap({ cols, matrix }: { cols: string[]; matrix: number[][] }
                     y={topH + i * cell + cell / 2 + 3.5}
                     textAnchor="middle"
                     fontSize={n > 6 ? 8.5 : 10}
-                    fontFamily="JetBrains Mono"
+                    fontFamily={MONO}
                     fontWeight={600}
-                    fill={Math.abs(r) > 0.55 ? "#062019" : "#8fa9a1"}
+                    fill={Math.abs(r) > 0.55 ? "var(--color-abyss)" : "var(--color-mut)"}
                     pointerEvents="none"
                   >
                     {r.toFixed(2).replace("0.", ".").replace("-0.", "-.").replace("1.00", "1")}
@@ -571,17 +579,17 @@ export function Heatmap({ cols, matrix }: { cols: string[]; matrix: number[][] }
       </svg>
       <div className="flex items-center justify-between mt-2 font-mono text-[10px] text-dim">
         <span className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-[3px] inline-block" style={{ background: "rgba(242,121,107,0.8)" }} /> inversa
+          <span className="w-3 h-3 rounded-[3px] inline-block" style={{ background: "color-mix(in srgb, var(--color-coral) 80%, transparent)" }} /> inversa
         </span>
         {hover ? (
           <span className="text-ink">
-            {cols[hover.i]} × {cols[hover.j]} → <b style={{ color: matrix[hover.i][hover.j] >= 0 ? "#3edcb4" : "#f2796b" }}>r = {matrix[hover.i][hover.j].toFixed(2).replace(".", ",")}</b>
+            {cols[hover.i]} × {cols[hover.j]} → <b style={{ color: matrix[hover.i][hover.j] >= 0 ? "var(--color-teal)" : "var(--color-coral)" }}>r = {matrix[hover.i][hover.j].toFixed(2).replace(".", ",")}</b>
           </span>
         ) : (
           <span>Pearson · passe o cursor para inspecionar</span>
         )}
         <span className="flex items-center gap-2">
-          direta <span className="w-3 h-3 rounded-[3px] inline-block" style={{ background: "rgba(62,220,180,0.8)" }} />
+          direta <span className="w-3 h-3 rounded-[3px] inline-block" style={{ background: "color-mix(in srgb, var(--color-teal) 80%, transparent)" }} />
         </span>
       </div>
     </div>
@@ -604,7 +612,7 @@ export function MissingBars({ profiles }: { profiles: ColumnProfile[] }) {
     <div className="space-y-2.5">
       {profiles.map((p) => {
         const pct = p.missingPct;
-        const color = pct === 0 ? "#2b463f" : pct < 5 ? "#66b7f0" : pct < 12 ? "#f4b860" : "#f2796b";
+        const color = pct === 0 ? "var(--color-line2)" : pct < 5 ? "var(--color-sky)" : pct < 12 ? "var(--color-amber)" : "var(--color-coral)";
         return (
           <div key={p.name} className="flex items-center gap-3 group">
             <span className="w-36 truncate font-mono text-[11px] text-mut group-hover:text-ink transition-colors">{p.name}</span>
@@ -614,7 +622,7 @@ export function MissingBars({ profiles }: { profiles: ColumnProfile[] }) {
                 style={{ width: `${Math.max(pct, pct > 0 ? 1.6 : 0.4)}%`, background: color, opacity: pct === 0 ? 0.4 : 1 }}
               />
             </div>
-            <span className="w-14 text-right font-mono text-[11px]" style={{ color: pct > 0 ? color : "#5e7770" }}>
+            <span className="w-14 text-right font-mono text-[11px]" style={{ color: pct > 0 ? color : "var(--color-dim)" }}>
               {pct.toFixed(1).replace(".", ",")}%
             </span>
           </div>

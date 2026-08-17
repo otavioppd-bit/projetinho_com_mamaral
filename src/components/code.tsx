@@ -32,14 +32,14 @@ const SQL_RULES: [string, RegExp][] = [
 ];
 
 const COLORS: Record<string, string> = {
-  "c-kw": "#f4b860",
-  "c-str": "#7cf5d6",
-  "c-num": "#f2796b",
-  "c-com": "#5e7770",
-  "c-fn": "#66b7f0",
-  "c-op": "#8fa9a1",
-  "c-pun": "#5e7770",
-  "c-id": "#dcebe6",
+  "c-kw": "var(--color-amber)",
+  "c-str": "var(--color-tealhi)",
+  "c-num": "var(--color-coral)",
+  "c-com": "var(--color-dim)",
+  "c-fn": "var(--color-sky)",
+  "c-op": "var(--color-mut)",
+  "c-pun": "var(--color-dim)",
+  "c-id": "var(--color-ink)",
   "c-ws": "",
 };
 

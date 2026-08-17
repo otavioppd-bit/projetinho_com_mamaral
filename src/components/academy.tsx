@@ -95,7 +95,7 @@ function ChartGlyph({ kind }: { kind: ChartGlyphKind }) {
           <path d="M5 20h9M32 20h11" />
           <rect x="14" y="11" width="18" height="18" rx="1.5" />
           <path d="M23 11v18" strokeWidth="2.4" />
-          <circle cx="49" cy="11" r="2.4" fill="#f2796b" stroke="none" />
+          <circle cx="49" cy="11" r="2.4" fill="var(--color-coral)" stroke="none" />
         </svg>
       );
     case "scatter":
@@ -107,7 +107,7 @@ function ChartGlyph({ kind }: { kind: ChartGlyphKind }) {
           <circle cx="27" cy="21" r="2.3" fill="currentColor" stroke="none" />
           <circle cx="34" cy="18" r="2.3" fill="currentColor" stroke="none" />
           <circle cx="41" cy="12" r="2.3" fill="currentColor" stroke="none" />
-          <circle cx="44" cy="30" r="2.6" fill="#f2796b" stroke="none" />
+          <circle cx="44" cy="30" r="2.6" fill="var(--color-coral)" stroke="none" />
         </svg>
       );
     case "donut":
@@ -181,9 +181,9 @@ function FormulaView({ f }: { f: FormulaItem }) {
 /* ---------------- seções do módulo ---------------- */
 
 const TONE = {
-  warn: { color: "#f4b860", border: "border-amber/35", bg: "bg-amber/[0.06]", Icon: IconAlert },
-  good: { color: "#3edcb4", border: "border-teal/35", bg: "bg-teal/[0.06]", Icon: IconCheck },
-  info: { color: "#66b7f0", border: "border-sky/35", bg: "bg-sky/[0.06]", Icon: IconSpark },
+  warn: { color: "var(--color-amber)", border: "border-amber/35", bg: "bg-amber/[0.06]", Icon: IconAlert },
+  good: { color: "var(--color-teal)", border: "border-teal/35", bg: "bg-teal/[0.06]", Icon: IconCheck },
+  info: { color: "var(--color-sky)", border: "border-sky/35", bg: "bg-sky/[0.06]", Icon: IconSpark },
 } as const;
 
 function Label({ children, color = "text-dim" }: { children: ReactNode; color?: string }) {
@@ -229,7 +229,7 @@ function SectionView({ s }: { s: MentorSection }) {
     return (
       <Reveal>
         <div className={`rounded-[10px] border ${t.border} ${t.bg} p-4 flex gap-3.5`}>
-          <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border" style={{ color: t.color, borderColor: `${t.color}44`, background: `${t.color}12` }}>
+          <span className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border" style={{ color: t.color, borderColor: `color-mix(in srgb, ${t.color} 27%, transparent)`, background: `color-mix(in srgb, ${t.color} 7%, transparent)` }}>
             <Icon className="w-4 h-4" />
           </span>
           <div>
@@ -358,7 +358,7 @@ function ModuleBanner({ m }: { m: MentorModule }) {
   const img = MODULE_IMAGES[m.id];
   return (
     <div className="relative h-40 md:h-52 rounded-[12px] overflow-hidden border border-line group">
-      <div className="absolute inset-0" style={{ background: "linear-gradient(120deg, #0e211e, #0a1413 55%, #13221c)" }} />
+      <div className="absolute inset-0" style={{ background: "linear-gradient(120deg, var(--color-panel2), var(--color-abyss) 55%, var(--color-panel))" }} />
       {img && !broken && (
         <img
           src={img}
@@ -367,8 +367,8 @@ function ModuleBanner({ m }: { m: MentorModule }) {
           className="absolute inset-0 w-full h-full object-cover opacity-95 transition-transform duration-[2800ms] ease-out group-hover:scale-[1.05]"
         />
       )}
-      <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(7,14,13,0.88) 0%, rgba(7,14,13,0.45) 42%, rgba(7,14,13,0.06) 78%)" }} />
-      <div className="absolute inset-x-0 bottom-0 h-16" style={{ background: "linear-gradient(0deg, rgba(7,14,13,0.75), transparent)" }} />
+      <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, color-mix(in srgb, var(--color-abyss) 88%, transparent) 0%, color-mix(in srgb, var(--color-abyss) 45%, transparent) 42%, color-mix(in srgb, var(--color-abyss) 6%, transparent) 78%)" }} />
+      <div className="absolute inset-x-0 bottom-0 h-16" style={{ background: "linear-gradient(0deg, color-mix(in srgb, var(--color-abyss) 75%, transparent), transparent)" }} />
       <div className="absolute inset-0 scanline" />
       <div className="absolute left-5 md:left-7 bottom-4 md:bottom-5 right-5">
         <p className="font-mono text-[9.5px] uppercase tracking-[0.3em] text-tealhi/95">
