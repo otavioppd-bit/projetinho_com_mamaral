@@ -1,7 +1,7 @@
 import Papa from "papaparse";
 
 /* ============================================================
-   PRISMA · motor de análise
+   Anthony.ia · motor de análise
    ingestão → tipagem → limpeza → perfilamento → insights
    ============================================================ */
 

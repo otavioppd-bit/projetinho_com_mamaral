@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { AnimatedNumber, Reveal, SectionHead, fmtNum } from "./ui";
 
 /* =====================================================================
-   ARQUITETURA & ESCALABILIDADE — blueprint de produção do PRISMA.
+   ARQUITETURA & ESCALABILIDADE — blueprint de produção do Anthony.ia.
    Diagrama interativo (hover/clique nos nós), simulador de carga com
    dimensionamento ao vivo, SLOs, fases de evolução e decisões técnicas.
    ===================================================================== */
@@ -65,7 +65,7 @@ const NODES: ArchNode[] = [
   },
   {
     id: "worker", name: "Workers de Análise", tech: "Pipeline · idempotente", x: 650, y: 500, lane: "Assincrono", laneColor: "#f4b860",
-    role: "O motor do PRISMA em modo servidor: parse → limpeza → perfilamento → gráficos. Cada job é idempotente pelo job-id.",
+    role: "O motor do Anthony.ia em modo servidor: parse → limpeza → perfilamento → gráficos. Cada job é idempotente pelo job-id.",
     scale: "KEDA escala pelo tamanho da fila: 1.000 jobs esperando = mais workers em ~90s, depois devolve.",
     fail: "Crash no meio do job = retry idempotente gera o MESMO resultado. O que falha 3× vai para a DLQ com alerta.",
   },
@@ -388,7 +388,7 @@ export function ArchitecturePage() {
                 Robusto por desenho —<br className="hidden md:block" /> e honesto sobre o estágio.
               </h1>
               <p className="text-sm text-mut mt-2.5 max-w-2xl leading-relaxed">
-                Hoje o PRISMA roda <span className="text-tealhi">100% no seu navegador</span>: nenhum dado sai da máquina,
+                Hoje o Anthony.ia roda <span className="text-tealhi">100% no seu navegador</span>: nenhum dado sai da máquina,
                 a infraestrutura custa zero e a disponibilidade é a do CDN. Para virar produto multi-usuário, ele foi
                 projetado sobre o blueprint abaixo — cada peça escolhida para escalar na horizontal{" "}
                 <em>sem reescrever o que já existe</em>.

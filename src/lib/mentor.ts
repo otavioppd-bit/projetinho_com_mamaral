@@ -1,4 +1,4 @@
-/* Motor do Mentor PRISMA — gera a trilha de mentoria (perguntas, Python,
+/* Motor do Mentor Anthony.ia — gera a trilha de mentoria (perguntas, Python,
    SQL, gráficos e matemática) PERSONALIZADA com as colunas e estatísticas
    reais do dataset carregado. Sem dataset, usa um exemplo didático. */
 
@@ -597,7 +597,7 @@ ORDER BY mes;
       example: hasStats
         ? `${num}: Q1 = ${f(q1)}, Q3 = ${f(q3)} → IQR = ${f(iqr)}. Cerca superior ≈ ${f(fenceSup)}; ${outN} linha(s) do seu dado passaram dela.`
         : "Preços: Q1 = 90, Q3 = 150 → IQR = 60 → cercas em 0 e 240. Um item de R$ 900 aparece como ponto vermelho no boxplot: investigar, não apagar.",
-      rule: "Método robusto: prefira ao z-score quando a distribuição é assimétrica — é o mesmo que o motor do PRISMA usa.",
+      rule: "Método robusto: prefira ao z-score quando a distribuição é assimétrica — é o mesmo que o motor do Anthony.ia usa.",
     },
     {
       id: "pct",
@@ -646,11 +646,11 @@ ORDER BY mes;
 
 export function mentorGreeting(ds: Dataset | null): string {
   if (ds) {
-    return `Olá! Eu sou o mentor do PRISMA — e já estudei o seu dataset “${ds.name}”: ${ds.finalRows.toLocaleString(
+    return `Olá! Eu sou o mentor do Anthony.ia — e já estudei o seu dataset “${ds.name}”: ${ds.finalRows.toLocaleString(
       "pt-BR"
     )} linhas limpas e ${ds.columns.length} colunas (${ds.numericCols.length} numéricas, ${ds.categoricalCols.length} categóricas, ${ds.dateCols.length} temporais). Monte a trilha usando as SUAS colunas: cada código e cada exemplo abaixo roda no seu dado. Por onde quer começar?`;
   }
-  return "Olá! Eu sou o mentor do PRISMA. Vou te guiar do dado bruto até a decisão — perguntas certas, extração e limpeza em Python, queries SQL, os gráficos que funcionam (e o porquê) e a matemática por trás de tudo. Estou em modo exemplo: carregue um dataset no Console e eu monto a trilha com as suas colunas. Por onde quer começar?";
+  return "Olá! Eu sou o mentor do Anthony.ia. Vou te guiar do dado bruto até a decisão — perguntas certas, extração e limpeza em Python, queries SQL, os gráficos que funcionam (e o porquê) e a matemática por trás de tudo. Estou em modo exemplo: carregue um dataset no Console e eu monto a trilha com as suas colunas. Por onde quer começar?";
 }
 
 /* ---------------- chat: intenções ---------------- */

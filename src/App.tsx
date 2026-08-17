@@ -101,7 +101,7 @@ export default function App() {
     document.title =
       theme === "ameba"
         ? "AMEBA · Control room de dados"
-        : "PRISMA · Análise de dados no navegador";
+        : "Anthony.ia · Análise de dados no navegador";
   }, [theme]);
 
   const openArea = (a: Area) => {
@@ -140,8 +140,14 @@ export default function App() {
         <div className="max-w-[1280px] mx-auto px-5 md:px-8 h-16 flex items-center gap-3">
           <LogoMark className="w-8 h-8" />
           <div className="leading-none">
-            <span className="font-display font-bold text-[19px] tracking-[0.14em]">
-              {theme === "ameba" ? "AMEBA" : "PRISMA"}
+            <span className="font-display font-bold text-[19px] tracking-[0.06em]">
+              {theme === "ameba" ? (
+                "AMEBA"
+              ) : (
+                <>
+                  Anthony<span className="text-teal">.ia</span>
+                </>
+              )}
             </span>
             <span className="hidden sm:block font-mono text-[8.5px] uppercase tracking-[0.3em] text-dim mt-1">
               {theme === "ameba" ? "control room" : "data engine"}
@@ -229,7 +235,7 @@ export default function App() {
 
       <footer className="relative z-10 border-t border-line">
         <div className="max-w-[1280px] mx-auto px-5 md:px-8 py-5 flex flex-wrap items-center justify-between gap-2">
-          <p className="font-mono text-[10px] text-dim">PRISMA © 2026 — ciência de dados direto no navegador</p>
+          <p className="font-mono text-[10px] text-dim">Anthony.ia © 2026 — ciência de dados direto no navegador</p>
           <p className="font-mono text-[10px] text-dim">Pearson · Tukey 1,5×IQR · OLS · quartis · g₁</p>
         </div>
       </footer>

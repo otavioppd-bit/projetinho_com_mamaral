@@ -20,9 +20,9 @@
   --color-sand: #e3c992;
   --color-steel: #7fd4c0;
 
-  --font-display: "Bricolage Grotesque", "IBM Plex Sans", sans-serif;
-  --font-body: "IBM Plex Sans", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  --font-display: "Cabinet Grotesk", "Satoshi", sans-serif;
+  --font-body: "Satoshi", system-ui, sans-serif;
+  --font-mono: "Spline Sans Mono", ui-monospace, "SFMono-Regular", monospace;
 }
 
 html {
@@ -294,9 +294,6 @@ body::after {
   --color-vio: #9aa2ff;
   --color-sand: #afb4db;
   --color-steel: #5e8bff;
-  --font-display: "Hanken Grotesk", "Open Sauce Sans", system-ui, sans-serif;
-  --font-body: "Open Sauce Sans", "IBM Plex Sans", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
 }
 
 /* assinatura tipográfica: display em peso 300 com tracking negativo */

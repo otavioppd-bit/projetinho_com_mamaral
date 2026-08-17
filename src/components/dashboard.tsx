@@ -65,7 +65,7 @@ export function Dashboard({ ds, onNew }: { ds: Dataset; onNew: () => void }) {
 
   const exportReport = () => {
     const report = {
-      gerador: "PRISMA · motor local v2.4",
+      gerador: "Anthony.ia · motor local v2.4",
       exportadoEm: new Date().toISOString(),
       fonte: ds.name,
       resumo: {
@@ -97,7 +97,7 @@ export function Dashboard({ ds, onNew }: { ds: Dataset; onNew: () => void }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `prisma_dossie_${ds.name.replace(/\s+/g, "_")}.json`;
+    a.download = `anthony_dossie_${ds.name.replace(/\s+/g, "_")}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -410,7 +410,7 @@ export function Dashboard({ ds, onNew }: { ds: Dataset; onNew: () => void }) {
       <Reveal className="mt-16">
         <div className="border-t border-line pt-6 flex flex-wrap items-center justify-between gap-3">
           <p className="font-mono text-[11px] text-dim">
-            PRISMA · análise exploratória local — Pearson · Tukey 1,5×IQR · imputação por mediana
+            Anthony.ia · análise exploratória local — Pearson · Tukey 1,5×IQR · imputação por mediana
           </p>
           <button className="btn-ghost" onClick={onNew}>
             <IconArrowLeft className="w-3.5 h-3.5" /> analisar outro dataset

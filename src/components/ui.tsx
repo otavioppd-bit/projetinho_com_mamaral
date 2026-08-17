@@ -235,10 +235,11 @@ const S = {
 export const LogoMark = ({ className = "w-7 h-7" }: IconProps) => (
   <svg viewBox="0 0 32 32" className={className} {...S}>
     <path d="M16 4 29 27H3L16 4Z" stroke="var(--color-teal)" strokeWidth="2" />
-    <path d="M16 13v14" stroke="var(--color-teal)" strokeWidth="1.4" opacity="0.7" />
-    <path d="M3 17h6" stroke="var(--color-amber)" strokeWidth="1.6" />
-    <path d="M20 22l8-5" stroke="var(--color-sky)" strokeWidth="1.6" />
-    <path d="M20 25l9 2" stroke="var(--color-coral)" strokeWidth="1.6" />
+    <path d="M9.6 20.5h12.8" stroke="var(--color-teal)" strokeWidth="1.6" opacity="0.85" />
+    <circle cx="16" cy="4" r="1.9" fill="var(--color-amber)" stroke="none" />
+    <path d="M3 17h5" stroke="var(--color-sky)" strokeWidth="1.6" />
+    <path d="M20.5 22.5l7.5-4.5" stroke="var(--color-sky)" strokeWidth="1.6" />
+    <path d="M21 25.5l8 1.5" stroke="var(--color-coral)" strokeWidth="1.6" />
   </svg>
 );
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { IconCheck } from "./ui";
 
 /* Mini-highlighter de sintaxe (Python & SQL) — tokenizador por regex,
-   sem dependências externas. Cores alinhadas à paleta do PRISMA. */
+   sem dependências externas. Cores alinhadas à paleta do Anthony.ia. */
 
 type Lang = "python" | "sql";
 interface Tok { t: string; c: string }

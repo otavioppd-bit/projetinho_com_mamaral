@@ -22,7 +22,7 @@ export const PALETTE = [
 
 const GRID = "var(--color-line)";
 const CURSOR = "var(--color-line2)";
-const MONO = "var(--font-mono)";
+const MONO = "'Spline Sans Mono', ui-monospace, monospace";
 
 const AXIS = { stroke: "transparent", tickLine: false as const, axisLine: { stroke: GRID } };
 

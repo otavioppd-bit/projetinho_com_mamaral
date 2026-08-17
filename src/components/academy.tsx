@@ -56,7 +56,7 @@ function MentorAvatar({ size = 56 }: { size?: number }) {
           <path d="M16 12 8 27M16 12l8 15" opacity="0.4" strokeWidth="1.1" />
         </svg>
       ) : (
-        <img src={MENTOR_AVATAR} alt="Mentor PRISMA" className="w-full h-full object-cover" onError={() => setBroken(true)} />
+        <img src={MENTOR_AVATAR} alt="Mentor Anthony.ia" className="w-full h-full object-cover" onError={() => setBroken(true)} />
       )}
       <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-teal border-2 border-abyss pulse-dot z-10" />
     </div>
@@ -338,7 +338,7 @@ function MentorBubble({ text }: { text: string }) {
       <MentorAvatar size={42} />
       <div className="min-w-0">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-teal">mentor prisma</span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-teal">mentor anthony.ia</span>
           <span className="flex items-center gap-1.5 font-mono text-[9px] text-dim">
             <span className="w-1.5 h-1.5 rounded-full bg-teal pulse-dot inline-block" /> respondendo
           </span>
@@ -453,7 +453,7 @@ function ChatDock({ onGoModule }: { onGoModule: (id: string) => void }) {
       <div className="px-4 py-3 border-b border-line bg-abyss/60 flex items-center gap-3">
         <MentorAvatar size={38} />
         <div className="flex-1 min-w-0">
-          <p className="font-display font-semibold text-[14px] tracking-tight leading-none">Mentor PRISMA</p>
+          <p className="font-display font-semibold text-[14px] tracking-tight leading-none">Mentor Anthony.ia</p>
           <p className="font-mono text-[9px] uppercase tracking-widest text-dim mt-1 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-teal pulse-dot inline-block" /> online · responde na hora
           </p>
