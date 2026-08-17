@@ -122,7 +122,7 @@ export function buildPlaybook(ds: Dataset | null): MentorModule[] {
     title: "As perguntas certas",
     tagline: "antes do código, o raciocínio",
     intro:
-      "Bem-vindo(a) à zona de trabalho. Regra número um dos seniores: análise que não responde pergunta de negócio é exercício de digitação. A gente monta o raciocínio DE TRÁS pra frente — da decisão para o dado. Faça estas perguntas antes de abrir o Jupyter e metade dos seus gráficos futuros deixa de existir (o que é um ótimo sinal).",
+      "Bem-vindo(a) à zona de trabalho. Vou te explicar como quem está do seu lado: a regra número um dos seniores é que análise que não responde pergunta de negócio é só exercício de digitação. O júnior abre o Jupyter e sai fazendo gráfico; o sênior faz o caminho DE TRÁS pra frente — primeiro a decisão que precisa ser tomada, depois a pergunta que destrava essa decisão, e só então o dado. Faça as perguntas deste módulo antes de escrever qualquer código e você vai perceber que metade dos gráficos que ia fazer simplesmente deixa de existir. Isso não é preguiça — é sinal de que você está analisando de verdade.",
     sections: [
       {
         kind: "list",
@@ -261,7 +261,7 @@ df = pd.json_normalize(r.json()["results"])  # achata JSON aninhado em tabela`,
     title: "Limpeza com Python",
     tagline: "onde a análise é ganha ou perdida",
     intro:
-      "Dado sujo não avisa que está sujo — ele só mente com muita confiança. Este é o ritual de limpeza na ordem exata em que os seniores executam: duplicatas → nulos → tipos → outliers → texto. Pular a ordem gera retrabalho: não adianta caçar outlier em coluna que ainda é texto.",
+      "Preste atenção nesta frase: dado sujo não avisa que está sujo — ele só mente com muita confiança. É por isso que limpeza é a etapa onde a análise é ganha ou perdida, e não um 'passo chato antes do legal'. Vou te passar o ritual na ordem exata em que os seniores executam: primeiro duplicatas, depois nulos, em seguida tipos, então outliers e por fim texto. A ordem importa de verdade: não adianta caçar outlier numa coluna que o pandas ainda enxerga como texto, e não adianta imputar nulo antes de remover a linha duplicada que criou o nulo. Siga a sequência, entenda o porquê de cada passo, e sua base sai daqui pronta para qualquer gráfico.",
     sections: [
       {
         kind: "code",
@@ -540,7 +540,7 @@ ORDER BY mes;
     title: "Os gráficos certos — e o porquê",
     tagline: "cada gráfico responde a UMA pergunta",
     intro:
-      "Agora a parte que todo mundo vê — e onde o júnior mais erra. Gráfico é argumento visual: cada tipo responde a UMA pergunta, e usar o gráfico errado é responder uma pergunta que ninguém fez. Decore o “quando usar” e o “por que funciona” de cada um; o resto é estética.",
+      "Chegamos na parte que todo mundo vê — e onde o júnior mais erra. Deixa eu te contar um segredo: gráfico não é enfeite, é argumento visual. Cada tipo de gráfico responde a UMA pergunta específica, e usar o gráfico errado é como responder uma pergunta que ninguém fez. Você não precisa decorar dez tipos; precisa entender o 'quando usar' e, principalmente, o 'por que funciona' de cada um — porque é o porquê que te deixa escolher sozinho diante de qualquer dado novo. O resto é estética. E no final eu ainda aponto quais gráficos o SEU dataset está pedindo agora.",
     sections: [
       { kind: "charts", title: "O arsenal mínimo, com justificativa científica", picks },
       ...dsPicks,

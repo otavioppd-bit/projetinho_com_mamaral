@@ -9,6 +9,7 @@ import {
   IconAlert, IconArrowLeft, IconCap, IconChat, IconCheck, IconChevronRight,
   IconSend, IconSpark, IconX, Reveal,
 } from "./ui";
+import { MENTOR_AVATAR, MODULE_IMAGES } from "../lib/images";
 
 /* ---------------- typewriter ---------------- */
 
@@ -38,21 +39,26 @@ function TypedText({ text, speed = 14, step = 2, className = "" }: { text: strin
 /* ---------------- avatar do mentor ---------------- */
 
 function MentorAvatar({ size = 56 }: { size?: number }) {
+  const [broken, setBroken] = useState(false);
   return (
     <div
-      className="relative shrink-0 rounded-full border border-teal/40 bg-teal/[0.07] flex items-center justify-center"
+      className="relative shrink-0 rounded-full border border-teal/40 bg-teal/[0.07] flex items-center justify-center overflow-hidden"
       style={{ width: size, height: size, boxShadow: "0 0 34px -6px rgba(62,220,180,0.35)" }}
     >
-      <svg
-        viewBox="0 0 32 32"
-        style={{ width: size * 0.56, height: size * 0.56 }}
-        fill="none" stroke="#3edcb4" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-      >
-        <path d="M16 4 29 27H3L16 4Z" />
-        <path d="M16 12v15" opacity="0.65" strokeWidth="1.3" />
-        <path d="M16 12 8 27M16 12l8 15" opacity="0.4" strokeWidth="1.1" />
-      </svg>
-      <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-teal border-2 border-abyss pulse-dot" />
+      {broken ? (
+        <svg
+          viewBox="0 0 32 32"
+          style={{ width: size * 0.56, height: size * 0.56 }}
+          fill="none" stroke="#3edcb4" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+        >
+          <path d="M16 4 29 27H3L16 4Z" />
+          <path d="M16 12v15" opacity="0.65" strokeWidth="1.3" />
+          <path d="M16 12 8 27M16 12l8 15" opacity="0.4" strokeWidth="1.1" />
+        </svg>
+      ) : (
+        <img src={MENTOR_AVATAR} alt="Mentor PRISMA" className="w-full h-full object-cover" onError={() => setBroken(true)} />
+      )}
+      <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-teal border-2 border-abyss pulse-dot z-10" />
     </div>
   );
 }
@@ -347,17 +353,45 @@ function MentorBubble({ text }: { text: string }) {
 
 /* ---------------- módulo ---------------- */
 
+function ModuleBanner({ m }: { m: MentorModule }) {
+  const [broken, setBroken] = useState(false);
+  const img = MODULE_IMAGES[m.id];
+  return (
+    <div className="relative h-40 md:h-52 rounded-[12px] overflow-hidden border border-line group">
+      <div className="absolute inset-0" style={{ background: "linear-gradient(120deg, #0e211e, #0a1413 55%, #13221c)" }} />
+      {img && !broken && (
+        <img
+          src={img}
+          alt=""
+          onError={() => setBroken(true)}
+          className="absolute inset-0 w-full h-full object-cover opacity-95 transition-transform duration-[2800ms] ease-out group-hover:scale-[1.05]"
+        />
+      )}
+      <div className="absolute inset-0" style={{ background: "linear-gradient(90deg, rgba(7,14,13,0.88) 0%, rgba(7,14,13,0.45) 42%, rgba(7,14,13,0.06) 78%)" }} />
+      <div className="absolute inset-x-0 bottom-0 h-16" style={{ background: "linear-gradient(0deg, rgba(7,14,13,0.75), transparent)" }} />
+      <div className="absolute inset-0 scanline" />
+      <div className="absolute left-5 md:left-7 bottom-4 md:bottom-5 right-5">
+        <p className="font-mono text-[9.5px] uppercase tracking-[0.3em] text-tealhi/95">
+          módulo {m.step} <span className="text-mut">· {m.tagline}</span>
+        </p>
+        <h2 className="font-display font-bold text-[26px] md:text-[34px] tracking-tight leading-tight mt-1 drop-shadow-[0_2px_14px_rgba(0,0,0,0.85)]">
+          {m.title}
+        </h2>
+      </div>
+      <span className="absolute top-4 right-5 font-display font-bold text-[44px] md:text-[56px] leading-none text-white/[0.13] select-none">
+        {m.step}
+      </span>
+    </div>
+  );
+}
+
 function ModuleView({ m }: { m: MentorModule }) {
   return (
     <div>
-      <div className="flex items-start gap-4">
-        <span className="font-display font-bold text-[58px] leading-[0.85] text-teal/20 select-none shrink-0">{m.step}</span>
-        <div className="min-w-0">
-          <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-dim">{m.tagline}</p>
-          <h2 className="font-display font-bold text-[26px] md:text-[32px] tracking-tight leading-tight mt-1">{m.title}</h2>
-        </div>
+      <ModuleBanner m={m} />
+      <div className="mt-7">
+        <MentorBubble text={m.intro} />
       </div>
-      <MentorBubble text={m.intro} />
       <div className="mt-7 space-y-6">
         {m.sections.map((s, i) => (
           <SectionView key={i} s={s} />

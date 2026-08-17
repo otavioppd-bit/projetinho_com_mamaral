@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, PieChart, Pie, Cell, ScatterChart, Scatter, AreaChart, Area,
-  LabelList,
+  LabelList, Brush,
 } from "recharts";
 import type { ColumnProfile, TimePoint } from "../lib/analyze";
 import { fmtSmart } from "../lib/analyze";
@@ -43,10 +43,12 @@ export function EmptyChart({ msg }: { msg: string }) {
 /* ================= histograma ================= */
 
 export function Histogram({ profile }: { profile: ColumnProfile | undefined }) {
+  const [k, setK] = useState(() =>
+    Math.max(9, Math.min(26, Math.round(Math.sqrt(profile?.values?.length ?? 100))))
+  );
   const bins = useMemo(() => {
     const v = profile?.values;
     if (!v || !v.length) return [];
-    const k = Math.max(9, Math.min(26, Math.round(Math.sqrt(v.length))));
     const min = profile!.min!;
     const max = profile!.max!;
     const w = (max - min) / k || 1;
@@ -61,7 +63,7 @@ export function Histogram({ profile }: { profile: ColumnProfile | undefined }) {
       arr[i].count++;
     });
     return arr;
-  }, [profile]);
+  }, [profile, k]);
 
   if (!profile?.values?.length) return <EmptyChart msg="Sem valores numéricos suficientes para distribuição." />;
 
@@ -86,15 +88,27 @@ export function Histogram({ profile }: { profile: ColumnProfile | undefined }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-line">
+      <div className="flex items-center gap-3 mt-4 pt-4 border-t border-line">
+        <label className="font-mono text-[9px] uppercase tracking-[0.18em] text-dim shrink-0">bins</label>
+        <input
+          type="range"
+          min={6}
+          max={44}
+          value={k}
+          onChange={(e) => setK(Number(e.target.value))}
+          className="flex-1 accent-teal cursor-pointer"
+        />
+        <span className="font-mono text-[11px] font-bold text-tealhi w-7 text-right tabular-nums">{k}</span>
+      </div>
+      <div className="grid grid-cols-4 gap-2 mt-3">
         {[
           ["média", fmtSmart(profile.mean!)],
           ["mediana", fmtSmart(profile.median!)],
           ["desvio σ", fmtSmart(profile.std!)],
           ["assimetria g₁", (profile.skew ?? 0).toFixed(2).replace(".", ",")],
-        ].map(([k, v]) => (
-          <div key={k} className="text-center">
-            <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-dim">{k}</div>
+        ].map(([key, v]) => (
+          <div key={key} className="text-center">
+            <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-dim">{key}</div>
             <div className="font-mono text-sm font-semibold text-ink mt-0.5">{v}</div>
           </div>
         ))}
@@ -106,16 +120,47 @@ export function Histogram({ profile }: { profile: ColumnProfile | undefined }) {
 /* ================= barras categóricas ================= */
 
 export function CategoryBars({ profile }: { profile: ColumnProfile | undefined }) {
-  const data = (profile?.top ?? []).slice(0, 8).map((t) => ({
-    value: truncate(t.value, 16),
-    full: t.value,
-    count: t.count,
-    pct: t.pct,
-  }));
+  const [sort, setSort] = useState<"desc" | "asc" | "abc">("desc");
+  const [mode, setMode] = useState<"count" | "pct">("count");
+
+  const data = useMemo(() => {
+    const base = (profile?.top ?? []).slice(0, 8).map((t) => ({
+      value: truncate(t.value, 16),
+      full: t.value,
+      count: t.count,
+      pct: t.pct,
+    }));
+    if (sort === "asc") return [...base].sort((a, b) => a.count - b.count);
+    if (sort === "abc") return [...base].sort((a, b) => a.full.localeCompare(b.full, "pt-BR"));
+    return base;
+  }, [profile, sort]);
+
   if (!data.length) return <EmptyChart msg="Nenhuma coluna categórica disponível." />;
 
+  const Toggle = ({ options, value, onChange }: { options: [string, string][]; value: string; onChange: (v: any) => void }) => (
+    <div className="flex rounded-md border border-line overflow-hidden">
+      {options.map(([id, lb]) => (
+        <button
+          key={id}
+          onClick={() => onChange(id)}
+          className={`px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider transition-colors ${
+            value === id ? "bg-teal/[0.14] text-tealhi" : "text-dim hover:text-mut"
+          }`}
+        >
+          {lb}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
-    <div style={{ height: Math.max(200, data.length * 36 + 16) }}>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center gap-2 mb-2 flex-wrap">
+        <Toggle options={[["desc", "↓ valor"], ["asc", "↑ valor"], ["abc", "A–Z"]]} value={sort} onChange={setSort} />
+        <Toggle options={[["count", "nº"], ["pct", "%"]]} value={mode} onChange={setMode} />
+        <span className="font-mono text-[9px] text-dim ml-auto">{(profile?.unique ?? 0)} categorias únicas</span>
+      </div>
+      <div className="flex-1 min-h-[200px]" style={{ minHeight: Math.max(200, data.length * 34 + 10) }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} layout="vertical" margin={{ top: 0, right: 42, left: 0, bottom: 0 }}>
           <CartesianGrid horizontal={false} stroke="#1c2f2b" strokeDasharray="3 6" />
@@ -129,11 +174,24 @@ export function CategoryBars({ profile }: { profile: ColumnProfile | undefined }
             axisLine={{ stroke: "#1c2f2b" }}
           />
           <Tooltip content={<ChartTip />} cursor={{ fill: "rgba(62,220,180,0.05)" }} />
-          <Bar dataKey="count" name="registros" fill="#3edcb4" fillOpacity={0.85} radius={[0, 3, 3, 0]} barSize={17}>
-            <LabelList dataKey="pct" position="right" formatter={(v: any) => `${Number(v).toFixed(0)}%`} />
+          <Bar
+            dataKey={mode === "pct" ? "pct" : "count"}
+            name={mode === "pct" ? "% do total" : "registros"}
+            fill="#3edcb4"
+            fillOpacity={0.85}
+            radius={[0, 3, 3, 0]}
+            barSize={17}
+            isAnimationActive
+          >
+            <LabelList
+              dataKey={mode === "pct" ? "pct" : "count"}
+              position="right"
+              formatter={(v: any) => (mode === "pct" ? `${Number(v).toFixed(0)}%` : Number(v).toLocaleString("pt-BR"))}
+            />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }
@@ -141,6 +199,7 @@ export function CategoryBars({ profile }: { profile: ColumnProfile | undefined }
 /* ================= donut ================= */
 
 export function Donut({ profile }: { profile: ColumnProfile | undefined }) {
+  const [active, setActive] = useState<number | null>(null);
   const top = (profile?.top ?? []).slice(0, 5);
   const rest = (profile?.top ?? []).slice(5);
   const data = [
@@ -150,31 +209,67 @@ export function Donut({ profile }: { profile: ColumnProfile | undefined }) {
   const total = data.reduce((s, d) => s + d.count, 0);
   if (!data.length) return <EmptyChart msg="Nenhuma coluna categórica disponível." />;
 
+  const sel = active !== null ? data[active] : null;
+
   return (
     <div className="flex items-center gap-4 h-full min-h-[220px]">
       <div className="relative w-[46%] h-full min-h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={data} dataKey="count" nameKey="value" innerRadius="64%" outerRadius="92%" paddingAngle={2} stroke="none">
+            <Pie
+              data={data}
+              dataKey="count"
+              nameKey="value"
+              innerRadius="62%"
+              outerRadius={sel ? "96%" : "92%"}
+              paddingAngle={2}
+              stroke="none"
+              onMouseEnter={(_, i) => setActive(i)}
+              onMouseLeave={() => setActive(null)}
+              style={{ outline: "none", cursor: "pointer", transition: "outer-radius .2s" }}
+            >
               {data.map((_, i) => (
-                <Cell key={i} fill={PALETTE[i % PALETTE.length]} fillOpacity={0.9} />
+                <Cell
+                  key={i}
+                  fill={PALETTE[i % PALETTE.length]}
+                  fillOpacity={active === null || active === i ? 0.92 : 0.28}
+                  style={{ transition: "fill-opacity .25s ease" }}
+                />
               ))}
             </Pie>
             <Tooltip content={<ChartTip />} />
           </PieChart>
         </ResponsiveContainer>
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="font-display font-bold text-xl leading-none">{total.toLocaleString("pt-BR")}</span>
-          <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-dim mt-1">registros</span>
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-6 text-center">
+          {sel ? (
+            <>
+              <span className="font-display font-bold text-[17px] leading-tight" style={{ color: PALETTE[active! % PALETTE.length] }}>
+                {sel.pct.toFixed(1).replace(".", ",")}%
+              </span>
+              <span className="font-mono text-[9px] text-mut mt-0.5 truncate max-w-full">{sel.value}</span>
+            </>
+          ) : (
+            <>
+              <span className="font-display font-bold text-xl leading-none">{total.toLocaleString("pt-BR")}</span>
+              <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-dim mt-1">registros</span>
+            </>
+          )}
         </div>
       </div>
-      <div className="flex-1 space-y-2 min-w-0">
+      <div className="flex-1 space-y-1 min-w-0">
         {data.map((d, i) => (
-          <div key={d.value} className="flex items-center gap-2 text-xs group">
-            <span className="w-2.5 h-2.5 rounded-[3px] shrink-0 transition-transform group-hover:scale-125" style={{ background: PALETTE[i % PALETTE.length] }} />
+          <button
+            key={d.value}
+            onMouseEnter={() => setActive(i)}
+            onMouseLeave={() => setActive(null)}
+            className={`w-full flex items-center gap-2 text-xs rounded-md px-1.5 py-1 -mx-1.5 text-left transition-colors ${
+              active === i ? "bg-panel2" : ""
+            } ${active !== null && active !== i ? "opacity-45" : ""}`}
+          >
+            <span className="w-2.5 h-2.5 rounded-[3px] shrink-0" style={{ background: PALETTE[i % PALETTE.length] }} />
             <span className="text-mut truncate flex-1">{d.value}</span>
             <span className="font-mono text-ink font-semibold">{d.pct.toFixed(0)}%</span>
-          </div>
+          </button>
         ))}
       </div>
     </div>
@@ -207,31 +302,47 @@ export function ScatterFit({ xName, yName, xs, ys }: { xName: string; yName: str
     return { pts, slope, intercept, r, xmin, xmax };
   }, [xs, ys]);
 
+  const [showFit, setShowFit] = useState(true);
+
   if (!model) return <EmptyChart msg="São necessárias duas colunas numéricas com variância." />;
 
   return (
     <div className="flex flex-col h-full">
-      <div className="h-[248px]">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="font-mono text-[9.5px] text-dim">n = {model.pts.length} pontos amostrados</span>
+        <button
+          onClick={() => setShowFit((v) => !v)}
+          className={`flex items-center gap-2 font-mono text-[9.5px] uppercase tracking-widest rounded border px-2 py-1 transition-colors ${
+            showFit ? "text-amber border-amber/40 bg-amber/[0.08]" : "text-dim border-line hover:text-mut"
+          }`}
+        >
+          <span className={`w-2 h-2 rounded-full inline-block ${showFit ? "bg-amber" : "bg-line2"}`} />
+          reta OLS
+        </button>
+      </div>
+      <div className="h-[222px]">
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 10, right: 12, left: -6, bottom: 2 }}>
             <CartesianGrid stroke="#1c2f2b" strokeDasharray="3 6" />
             <XAxis type="number" dataKey="x" name={xName} domain={["auto", "auto"]} {...AXIS} tickFormatter={(v: number) => fmtSmart(v)} tickCount={7} />
             <YAxis type="number" dataKey="y" name={yName} domain={["auto", "auto"]} width={56} tickFormatter={(v: number) => fmtSmart(v)} tickLine={false} axisLine={{ stroke: "#1c2f2b" }} />
             <Tooltip content={<ChartTip />} cursor={{ strokeDasharray: "4 4", stroke: "#2b463f" }} />
-            <ReferenceLine
-              segment={[
-                { x: model.xmin, y: model.slope * model.xmin + model.intercept },
-                { x: model.xmax, y: model.slope * model.xmax + model.intercept },
-              ]}
-              stroke="#f4b860"
-              strokeWidth={2}
-              strokeDasharray="7 5"
-            />
+            {showFit && (
+              <ReferenceLine
+                segment={[
+                  { x: model.xmin, y: model.slope * model.xmin + model.intercept },
+                  { x: model.xmax, y: model.slope * model.xmax + model.intercept },
+                ]}
+                stroke="#f4b860"
+                strokeWidth={2}
+                strokeDasharray="7 5"
+              />
+            )}
             <Scatter data={model.pts} fill="#3edcb4" fillOpacity={0.62} />
           </ScatterChart>
         </ResponsiveContainer>
       </div>
-      <div className="flex gap-4 mt-3 pt-3 border-t border-line font-mono text-[11px]">
+      <div className="flex gap-4 mt-3 pt-3 border-t border-line font-mono text-[11px] flex-wrap">
         <span className="text-dim">ŷ = {model.slope.toFixed(3).replace(".", ",")}·x {model.intercept >= 0 ? "+" : "−"} {Math.abs(model.intercept).toFixed(1).replace(".", ",")}</span>
         <span className="text-amber ml-auto">r = {model.r.toFixed(2).replace(".", ",")}</span>
         <span className="text-teal">r² = {(model.r ** 2).toFixed(2).replace(".", ",")}</span>
@@ -244,8 +355,9 @@ export function ScatterFit({ xName, yName, xs, ys }: { xName: string; yName: str
 
 export function TimeSeries({ points, yName }: { points: TimePoint[]; yName: string }) {
   if (!points.length) return <EmptyChart msg="Sem pares data × valor suficientes." />;
+  const avg = points.reduce((s, p) => s + p.v, 0) / points.length;
   return (
-    <div className="h-[260px]">
+    <div className="h-[300px]">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={points} margin={{ top: 8, right: 12, left: -4, bottom: 0 }}>
           <defs>
@@ -272,9 +384,29 @@ export function TimeSeries({ points, yName }: { points: TimePoint[]; yName: stri
               ) : null
             }
           />
+          <ReferenceLine
+            y={avg}
+            stroke="#f4b860"
+            strokeDasharray="6 5"
+            label={{ value: `média ${fmtSmart(avg)}`, fill: "#f4b860", fontSize: 10, fontFamily: "JetBrains Mono", position: "insideTopRight" }}
+          />
           <Area type="monotone" dataKey="v" name={yName} stroke="#3edcb4" strokeWidth={2.2} fill="url(#tsGrad)" activeDot={{ r: 4, fill: "#7cf5d6", stroke: "#06201a" }} />
+          {points.length > 14 && (
+            <Brush
+              dataKey="t"
+              height={24}
+              travellerWidth={9}
+              stroke="#2b463f"
+              fill="#0a1413"
+            />
+          )}
         </AreaChart>
       </ResponsiveContainer>
+      {points.length > 14 && (
+        <p className="font-mono text-[9.5px] text-dim mt-1.5 text-right">
+          arraste as alças para dar zoom no período
+        </p>
+      )}
     </div>
   );
 }

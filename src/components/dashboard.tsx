@@ -8,6 +8,7 @@ import {
 import {
   BoxPlots, CategoryBars, Donut, Heatmap, Histogram, MissingBars, ScatterFit, TimeSeries,
 } from "./charts";
+import { GeoMap } from "./GeoMap";
 
 const KIND_META = {
   remove: { icon: IconX, color: "#f2796b", label: "remoção" },
@@ -42,6 +43,7 @@ export function Dashboard({ ds, onNew }: { ds: Dataset; onNew: () => void }) {
   const [scatX, setScatX] = useState(bestPair.x);
   const [scatY, setScatY] = useState(bestPair.y);
   const [tsCol, setTsCol] = useState(ds.numericCols[0] ?? "");
+  const [mapMetric, setMapMetric] = useState<string>("__count__");
 
   const timePoints = useMemo(
     () => (ds.dateCols.length && tsCol ? buildTimeSeries(ds.rows, ds.dateCols[0], tsCol, ds.columns) : []),
@@ -301,21 +303,21 @@ export function Dashboard({ ds, onNew }: { ds: Dataset; onNew: () => void }) {
           </ChartCard>
 
           <ChartCard
-            className="col-span-12 lg:col-span-5"
-            title="Boxplots comparativos"
-            subtitle="quartis, bigodes de Tukey e outliers em vermelho"
-            badge="svg nativo"
+            className="col-span-12 lg:col-span-7"
+            title="Mapa regional · Brasil"
+            subtitle="coroplético por macrorregião — detecta a coluna de região e agrega a métrica"
+            badge="interativo"
           >
-            <BoxPlots profiles={numericProfiles} />
+            <GeoMap ds={ds} metricCol={mapMetric} onMetricCol={setMapMetric} />
           </ChartCard>
 
           <ChartCard
-            className="col-span-12 lg:col-span-7"
-            title="Matriz de correlação"
-            subtitle="coeficientes de Pearson entre as variáveis numéricas"
-            badge="svg nativo"
+            className="col-span-12 lg:col-span-5"
+            title="Composição"
+            subtitle="participação das categorias — passe o cursor para isolar a fatia"
+            actions={ds.categoricalCols.length > 1 ? <Select value={donutCol} onChange={setDonutCol} options={ds.categoricalCols} /> : undefined}
           >
-            <Heatmap cols={ds.correlation.cols} matrix={ds.correlation.matrix} />
+            <Donut profile={prof(donutCol)} />
           </ChartCard>
 
           <ChartCard
@@ -336,11 +338,20 @@ export function Dashboard({ ds, onNew }: { ds: Dataset; onNew: () => void }) {
 
           <ChartCard
             className="col-span-12 lg:col-span-5"
-            title="Composição"
-            subtitle="participação das categorias no total"
-            actions={ds.categoricalCols.length > 1 ? <Select value={donutCol} onChange={setDonutCol} options={ds.categoricalCols} /> : undefined}
+            title="Boxplots comparativos"
+            subtitle="quartis, bigodes de Tukey e outliers em vermelho"
+            badge="svg nativo"
           >
-            <Donut profile={prof(donutCol)} />
+            <BoxPlots profiles={numericProfiles} />
+          </ChartCard>
+
+          <ChartCard
+            className="col-span-12"
+            title="Matriz de correlação"
+            subtitle="coeficientes de Pearson entre todas as variáveis numéricas — passe o cursor para inspecionar cada par"
+            badge="svg nativo"
+          >
+            <Heatmap cols={ds.correlation.cols} matrix={ds.correlation.matrix} />
           </ChartCard>
 
           {ds.dateCols.length > 0 && (
