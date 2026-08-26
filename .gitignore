@@ -1,5 +1,37 @@
+# dependências
 node_modules/
-.next/
+
+# build
 dist/
-build/
+dist-ssr/
+*.local
+
+# ambiente
+.env
+.env.*
+!.env.example
+
+# logs
+logs/
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# editores e SO
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# caches
+.cache/
+.eslintcache
+*.tsbuildinfo
