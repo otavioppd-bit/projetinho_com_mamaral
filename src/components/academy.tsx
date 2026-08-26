@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Dataset } from "../lib/analyze";
 import {
-  askMentor, buildPlaybook, CHAT_SUGGESTIONS, mentorGreeting,
-  type ChartGlyphKind, type FormulaItem, type MentorModule, type MentorSection,
+  askMentor, buildPlaybook, CHAT_SUGGESTIONS, LEVELS, mentorGreeting,
+  type ChartGlyphKind, type FormulaItem, type Level, type MentorModule,
+  type MentorSection, type PlatformInfo,
 } from "../lib/mentor";
 import { CodeBlock } from "./code";
 import {
   IconAlert, IconArrowLeft, IconCap, IconChat, IconCheck, IconChevronRight,
   IconSend, IconSpark, IconX, Reveal,
 } from "./ui";
-import { MENTOR_AVATAR, MODULE_IMAGES } from "../lib/images";
+import { IMAGE_ALIAS, MENTOR_AVATAR, MODULE_IMAGES } from "../lib/images";
 
 /* ---------------- typewriter ---------------- */
 
@@ -301,6 +302,22 @@ function SectionView({ s }: { s: MentorSection }) {
     );
   }
 
+  /* plataformas de visualização */
+  if (s.kind === "platform") {
+    return (
+      <Reveal>
+        <div>
+          <h4 className="font-display font-semibold text-[16px] tracking-tight mb-4">{s.title}</h4>
+          <div className="grid lg:grid-cols-2 gap-4">
+            {s.items.map((pl) => (
+              <PlatformCard key={pl.name} p={pl} />
+            ))}
+          </div>
+        </div>
+      </Reveal>
+    );
+  }
+
   /* formulas */
   return (
     <Reveal>
@@ -330,6 +347,92 @@ function SectionView({ s }: { s: MentorSection }) {
   );
 }
 
+/* ---------------- plataformas de visualização ---------------- */
+
+function PlatformGlyph({ kind }: { kind: PlatformInfo["glyph"] }) {
+  const common = { fill: "none", stroke: "currentColor", strokeWidth: 1.7, strokeLinecap: "round" as const };
+  return (
+    <span className="w-9 h-9 rounded-md border border-line2 bg-abyss/60 flex items-center justify-center text-tealhi shrink-0">
+      <svg viewBox="0 0 24 24" className="w-5 h-5">
+        {kind === "tableau" && (
+          <g {...common}>
+            <circle cx="6" cy="6" r="2.4" /> <circle cx="18" cy="6" r="2.4" />
+            <circle cx="6" cy="18" r="2.4" /> <circle cx="18" cy="18" r="2.4" />
+            <circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none" opacity="0.85" />
+          </g>
+        )}
+        {kind === "powerbi" && (
+          <g {...common}>
+            <path d="M5 19V12" /> <path d="M10 19V6" /> <path d="M15 19V10" /> <path d="M20 19V3" opacity="0.55" />
+            <path d="M3 19h18" opacity="0.5" />
+          </g>
+        )}
+        {kind === "looker" && (
+          <g {...common}>
+            <path d="M4 9l8-4 8 4-8 4-8-4Z" />
+            <path d="M4 14l8 4 8-4" opacity="0.6" />
+          </g>
+        )}
+        {kind === "sigma" && (
+          <g {...common}>
+            <path d="M18 6H7l6 6-6 6h11" />
+          </g>
+        )}
+        {kind === "metabase" && (
+          <g fill="currentColor" stroke="none">
+            <circle cx="7" cy="7" r="1.8" /> <circle cx="12" cy="7" r="1.8" opacity="0.7" /> <circle cx="17" cy="7" r="1.8" opacity="0.4" />
+            <circle cx="7" cy="12" r="1.8" opacity="0.7" /> <circle cx="12" cy="12" r="1.8" /> <circle cx="17" cy="12" r="1.8" opacity="0.7" />
+            <circle cx="7" cy="17" r="1.8" opacity="0.4" /> <circle cx="12" cy="17" r="1.8" opacity="0.7" /> <circle cx="17" cy="17" r="1.8" />
+          </g>
+        )}
+      </svg>
+    </span>
+  );
+}
+
+function PlatformCard({ p }: { p: PlatformInfo }) {
+  return (
+    <div className="card p-5 flex flex-col">
+      <div className="flex items-start gap-3.5">
+        <PlatformGlyph kind={p.glyph} />
+        <div className="min-w-0">
+          <h5 className="font-display font-bold text-[16px] tracking-tight leading-tight">{p.name}</h5>
+          <p className="text-[12px] text-mut mt-0.5 leading-snug">{p.tagline}</p>
+        </div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3 mt-4">
+        <div className="rounded-md border border-teal/25 bg-teal/[0.04] p-3">
+          <Label color="text-teal/80">onde ganha</Label>
+          <ul className="mt-1.5 space-y-1.5">
+            {p.pros.map((x) => (
+              <li key={x} className="flex gap-1.5 text-[11.5px] text-mut leading-snug">
+                <span className="text-teal font-bold shrink-0">+</span>{x}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-md border border-coral/25 bg-coral/[0.04] p-3">
+          <Label color="text-coral/80">onde dói</Label>
+          <ul className="mt-1.5 space-y-1.5">
+            {p.cons.map((x) => (
+              <li key={x} className="flex gap-1.5 text-[11.5px] text-mut leading-snug">
+                <span className="text-coral font-bold shrink-0">−</span>{x}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+      <p className="mt-3 text-[12px] text-mut leading-relaxed">
+        <span className="font-mono text-[9px] uppercase tracking-[0.18em] text-sky mr-2">escolha quando</span>
+        {p.when}
+      </p>
+      <p className="mt-3 pt-3 border-t border-line text-[12.5px] text-ink/90 leading-relaxed italic">
+        “{p.verdict}”
+      </p>
+    </div>
+  );
+}
+
 /* ---------------- bolha do mentor ---------------- */
 
 function MentorBubble({ text }: { text: string }) {
@@ -355,7 +458,7 @@ function MentorBubble({ text }: { text: string }) {
 
 function ModuleBanner({ m }: { m: MentorModule }) {
   const [broken, setBroken] = useState(false);
-  const img = MODULE_IMAGES[m.id];
+  const img = MODULE_IMAGES[m.id] ?? MODULE_IMAGES[IMAGE_ALIAS[m.id] ?? ""];
   return (
     <div className="relative h-40 md:h-52 rounded-[12px] overflow-hidden border border-line group">
       <div className="absolute inset-0" style={{ background: "linear-gradient(120deg, var(--color-panel2), var(--color-abyss) 55%, var(--color-panel))" }} />
@@ -410,7 +513,7 @@ interface Msg {
   anim?: boolean;
 }
 
-function ChatDock({ onGoModule }: { onGoModule: (id: string) => void }) {
+function ChatDock({ onGoModule, level }: { onGoModule: (id: string) => void; level: Level }) {
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -429,7 +532,7 @@ function ChatDock({ onGoModule }: { onGoModule: (id: string) => void }) {
     setMsgs((m) => [...m, { role: "user", text }]);
     setTyping(true);
     setTimeout(() => {
-      const a = askMentor(text);
+      const a = askMentor(text, level);
       setMsgs((m) => [...m, { role: "ai", text: a.reply, moduleId: a.moduleId, anim: true }]);
       setTyping(false);
     }, 800);
@@ -554,21 +657,66 @@ function ChatDock({ onGoModule }: { onGoModule: (id: string) => void }) {
 
 /* ---------------- tela principal ---------------- */
 
+const loadVisited = (lv: Level): Set<string> => {
+  try {
+    const arr = JSON.parse(localStorage.getItem(`anthony_trilha_${lv}`) || "[]") as string[];
+    return new Set(arr);
+  } catch {
+    return new Set();
+  }
+};
+const loadLevel = (): Level => {
+  const saved = localStorage.getItem("anthony_nivel");
+  return saved === "pleno" || saved === "senior" ? saved : "junior";
+};
+
 export function Academy({ ds, onOpenConsole }: { ds: Dataset | null; onOpenConsole: () => void }) {
-  const playbook = useMemo(() => buildPlaybook(ds), [ds]);
-  const greeting = useMemo(() => mentorGreeting(ds), [ds]);
+  const [level, setLevel] = useState<Level>(loadLevel);
+  const playbook = useMemo(() => buildPlaybook(level, ds), [level, ds]);
+  const greeting = useMemo(() => mentorGreeting(level, ds), [level, ds]);
   const [activeId, setActiveId] = useState(playbook[0].id);
-  const [visited, setVisited] = useState<Set<string>>(() => new Set([playbook[0].id]));
+  const [visited, setVisited] = useState<Set<string>>(() => loadVisited(level));
+
+  /* garante que o módulo ativo exista ao trocar de nível */
+  useEffect(() => {
+    if (!playbook.some((m) => m.id === activeId)) setActiveId(playbook[0].id);
+  }, [playbook, activeId]);
+
+  const persistVisited = (lv: Level, v: Set<string>) => {
+    try {
+      localStorage.setItem(`anthony_trilha_${lv}`, JSON.stringify([...v]));
+    } catch {
+      /* privado */
+    }
+  };
 
   const go = (id: string) => {
     setActiveId(id);
-    setVisited((v) => new Set(v).add(id));
+    setVisited((v) => {
+      const nv = new Set(v).add(id);
+      persistVisited(level, nv);
+      return nv;
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const changeLevel = (lv: Level) => {
+    if (lv === level) return;
+    setLevel(lv);
+    localStorage.setItem("anthony_nivel", lv);
+    const v = loadVisited(lv);
+    setVisited(v);
+    setActiveId(buildPlaybook(lv, ds)[0].id);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const active = playbook.find((m) => m.id === activeId) ?? playbook[0];
   const idx = playbook.indexOf(active);
-  const progress = Math.round((visited.size / playbook.length) * 100);
+  const visitedHere = playbook.filter((m) => visited.has(m.id)).length;
+  const progress = Math.round((visitedHere / playbook.length) * 100);
+  const levelMeta = LEVELS.find((l) => l.id === level)!;
+  const countFor = (lv: Level) =>
+    lv === level ? visitedHere : buildPlaybook(lv, ds).filter((m) => loadVisited(lv).has(m.id)).length;
 
   return (
     <div className="relative z-10 max-w-[1280px] mx-auto px-5 md:px-8 pb-28">
@@ -579,7 +727,7 @@ export function Academy({ ds, onOpenConsole }: { ds: Dataset | null; onOpenConso
             <MentorAvatar size={72} />
             <div className="flex-1 min-w-[260px]">
               <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-teal flex items-center gap-2">
-                <IconCap className="w-3.5 h-3.5" /> zona data analytics · mentoria guiada por ia
+                <IconCap className="w-3.5 h-3.5" /> zona data analytics · trilhas júnior → sênior
               </p>
               <h1 className="font-display font-bold text-[26px] md:text-[36px] tracking-tight leading-[1.05] mt-2">
                 Do dado bruto à decisão, <span className="text-tealhi">sem se perder</span>
@@ -604,8 +752,8 @@ export function Academy({ ds, onOpenConsole }: { ds: Dataset | null; onOpenConso
               )}
               <div className="border border-line rounded-lg px-4 py-3">
                 <div className="flex items-center justify-between gap-4">
-                  <p className="font-mono text-[9px] uppercase tracking-widest text-dim">progresso da trilha</p>
-                  <p className="font-mono text-[11px] text-teal">{visited.size}/{playbook.length}</p>
+                  <p className="font-mono text-[9px] uppercase tracking-widest text-dim">trilha {levelMeta.name.toLowerCase()}</p>
+                  <p className="font-mono text-[11px] text-teal">{visitedHere}/{playbook.length}</p>
                 </div>
                 <div className="h-1.5 rounded-full bg-line mt-2 overflow-hidden">
                   <div
@@ -619,6 +767,51 @@ export function Academy({ ds, onOpenConsole }: { ds: Dataset | null; onOpenConso
         </div>
       </Reveal>
 
+      {/* seletor de trilhas */}
+      <Reveal className="mt-6" delay={80}>
+        <div className="grid sm:grid-cols-3 gap-3">
+          {LEVELS.map((lv) => {
+            const isOn = lv.id === level;
+            const done = countFor(lv.id);
+            const pct = Math.round((done / 6) * 100);
+            return (
+              <button
+                key={lv.id}
+                onClick={() => changeLevel(lv.id)}
+                className={`text-left rounded-[10px] border p-4 transition-all relative overflow-hidden group ${
+                  isOn
+                    ? "border-teal/45 bg-teal/[0.06]"
+                    : "border-line bg-panel/60 hover:border-line2 hover:-translate-y-0.5"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`font-display font-bold text-[17px] tracking-tight ${isOn ? "text-tealhi" : "text-ink"}`}>
+                    {lv.name}
+                  </span>
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-dim">{done}/6 módulos</span>
+                </div>
+                <p className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-teal/80 mt-0.5">{lv.focus}</p>
+                <p className="text-[11.5px] text-mut leading-relaxed mt-2">{lv.desc}</p>
+                <div className="flex flex-wrap gap-1 mt-2.5">
+                  {lv.skills.map((sk) => (
+                    <span key={sk} className="font-mono text-[8.5px] uppercase tracking-wider text-dim border border-line rounded px-1.5 py-0.5 group-hover:text-mut transition-colors">
+                      {sk}
+                    </span>
+                  ))}
+                </div>
+                <div className="h-1 rounded-full bg-line mt-3 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-teal transition-all duration-700 ease-out"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+
+              </button>
+            );
+          })}
+        </div>
+      </Reveal>
+
       <div className="grid lg:grid-cols-[292px_1fr] gap-6 mt-6 items-start">
         {/* trilha */}
         <aside className="lg:sticky lg:top-20">
@@ -626,7 +819,7 @@ export function Academy({ ds, onOpenConsole }: { ds: Dataset | null; onOpenConso
             <div className="card-static overflow-hidden">
               <div className="px-4 py-3 border-b border-line flex items-center gap-2">
                 <IconCap className="w-4 h-4 text-teal" />
-                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-mut">trilha do júnior</p>
+                <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-mut">trilha {levelMeta.name.toLowerCase()} · módulos</p>
               </div>
               <div className="p-2">
                 {playbook.map((m) => {
@@ -682,15 +875,26 @@ export function Academy({ ds, onOpenConsole }: { ds: Dataset | null; onOpenConso
                 <IconChevronRight className="w-3.5 h-3.5" />
               </button>
             ) : (
-              <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-teal flex items-center gap-2">
-                <IconCheck className="w-3.5 h-3.5" /> trilha completa
-              </span>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="font-mono text-[10px] uppercase tracking-[0.25em] text-teal flex items-center gap-2">
+                  <IconCheck className="w-3.5 h-3.5" /> trilha {levelMeta.name.toLowerCase()} completa
+                </span>
+                {LEVELS[LEVELS.findIndex((l) => l.id === level) + 1] && (
+                  <button
+                    className="btn-teal"
+                    onClick={() => changeLevel(LEVELS[LEVELS.findIndex((l) => l.id === level) + 1].id)}
+                  >
+                    trilha {LEVELS[LEVELS.findIndex((l) => l.id === level) + 1].name.toLowerCase()}
+                    <IconChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </main>
       </div>
 
-      <ChatDock onGoModule={go} />
+      <ChatDock onGoModule={go} level={level} />
     </div>
   );
 }

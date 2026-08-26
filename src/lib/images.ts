@@ -17,3 +17,19 @@ export const MODULE_IMAGES: Record<string, string> = {
 
 export const MENTOR_AVATAR =
   "https://image.qwenlm.ai/generated-images/ff7c8cf8-ff76-4dcc-b2a1-82774dee495f/_result.png";
+
+/* módulos das trilhas Pleno/Sênior reaproveitam o banner mais próximo */
+export const IMAGE_ALIAS: Record<string, string> = {
+  modelagem: "sql",
+  metricas: "graficos",
+  "plataforma-tableau": "graficos",
+  "plataforma-powerbi": "graficos",
+  "sql-avancado": "sql",
+  estatistica: "matematica",
+  arquitetura: "extracao",
+  governanca: "limpeza",
+  experimentacao: "matematica",
+  "plataformas-eco": "graficos",
+  gestao: "perguntas",
+  preditivo: "matematica",
+};
