@@ -1,4 +1,21 @@
+import { useState } from "react";
+import { analyze, type Dataset } from "./lib/analyze";
+import { IntakeView, PipelineView } from "./components/intake";
+import { Dashboard } from "./components/dashboard";
+import { Academy } from "./components/academy";
+import { ArchitecturePage } from "./components/arch";
 import { AILab } from "./components/ailab";
+import { IconCap, IconChip, IconLayers, IconTable, LogoMark } from "./components/icons";
+
+type Area = "console" | "academy" | "ailab" | "arch";
+type ConsoleView = "intake" | "pipeline" | "dashboard";
+
+const AREAS: { id: Area; label: string; Icon: typeof IconTable }[] = [
+  { id: "console", label: "console", Icon: IconTable },
+  { id: "academy", label: "analytics", Icon: IconCap },
+  { id: "ailab", label: "ia lab", Icon: IconChip },
+  { id: "arch", label: "arquitetura", Icon: IconLayers },
+];
 
 /* partículas ambiente */
 const MOTES = [
@@ -49,55 +66,116 @@ function Background() {
 }
 
 export default function App() {
+  const [area, setArea] = useState<Area>("console");
+  const [view, setView] = useState<ConsoleView>("intake");
+  const [ds, setDs] = useState<Dataset | null>(null);
+
+  const openArea = (a: Area) => {
+    setArea(a);
+    window.scrollTo({ top: 0 });
+  };
+
+  const handleAnalyze = (text: string, name: string): string | null => {
+    const parsed = analyze(text, name);
+    if (!parsed) return "Não consegui ler esse arquivo — confira se tem cabeçalho e pelo menos 2 linhas de dados.";
+    setDs(parsed);
+    setView("pipeline");
+    window.scrollTo({ top: 0 });
+    return null;
+  };
+
+  const reset = () => {
+    setDs(null);
+    setView("intake");
+    window.scrollTo({ top: 0 });
+  };
+
   return (
     <div className="min-h-screen flex flex-col relative">
       <Background />
 
       <header className="relative z-20">
         <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg border border-[var(--color-cyan)]/40 bg-[rgba(55,230,195,0.08)] flex items-center justify-center shadow-[0_0_28px_-6px_rgba(55,230,195,0.4)]">
-            <svg viewBox="0 0 32 32" className="w-5 h-5" fill="none" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M16 5 28 27H4L16 5Z" stroke="var(--color-cyan)" strokeWidth="2" />
-              <path d="M10.4 20h11.2" stroke="var(--color-cyan)" strokeWidth="1.6" opacity="0.85" />
-              <circle cx="16" cy="5" r="2" fill="var(--color-amber)" stroke="none" />
-            </svg>
-          </div>
-          <div className="leading-none">
-            <span className="font-display font-bold text-[18px] tracking-[0.01em]">
-              Anthony<span className="text-[var(--color-cyan)]">.ia</span>
-            </span>
-            <span className="hidden sm:block font-mono text-[8.5px] uppercase tracking-[0.3em] text-[var(--color-dim)] mt-1">
-              inteligência aplicada
-            </span>
-          </div>
+          <button className="flex items-center gap-3 group" onClick={() => openArea("console")}>
+            <div className="w-9 h-9 rounded-lg border border-[var(--color-line2)] bg-[rgba(55,230,195,0.08)] flex items-center justify-center shadow-[0_0_28px_-6px_rgba(55,230,195,0.4)] group-hover:border-[var(--color-teal)]/50 transition-colors">
+              <LogoMark className="w-5 h-5" />
+            </div>
+            <div className="leading-none text-left">
+              <span className="font-display font-bold text-[18px] tracking-[0.01em]">
+                Anthony<span className="text-[var(--color-teal)]">.ia</span>
+              </span>
+              <span className="hidden sm:block font-mono text-[8.5px] uppercase tracking-[0.3em] text-[var(--color-dim)] mt-1">
+                data · ia · mentoria
+              </span>
+            </div>
+          </button>
 
-          <span className="ml-2 sm:ml-4 font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--color-amber)] border border-[var(--color-amber)]/35 bg-[rgba(255,180,84,0.08)] rounded px-2 py-1">
-            ia lab
-          </span>
+          <nav className="ml-2 sm:ml-6 flex items-center gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)]/70 p-1">
+            {AREAS.map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                onClick={() => openArea(id)}
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-md font-mono text-[10px] uppercase tracking-[0.12em] border transition-all ${
+                  area === id
+                    ? "bg-[rgba(55,230,195,0.13)] text-[var(--color-tealhi)] border-[var(--color-teal)]/35"
+                    : "text-[var(--color-dim)] border-transparent hover:text-[var(--color-mut)] hover:bg-[var(--color-panel2)]"
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">{label}</span>
+              </button>
+            ))}
+          </nav>
 
           <div className="ml-auto flex items-center gap-4">
-            <span className="hidden md:flex items-center gap-2 font-mono text-[10.5px] text-[var(--color-mut)]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-cyan)] pulse-dot inline-block" />
-              12 modelos · inferência local
+            <span className="hidden lg:flex items-center gap-2 font-mono text-[10.5px] text-[var(--color-mut)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-teal)] pulse-dot inline-block" />
+              motor local · online
             </span>
-            <span className="hidden md:block w-px h-5 bg-[var(--color-line2)]" />
-            <span className="font-mono text-[10.5px] text-[var(--color-dim)]">v1.0</span>
+            <span className="hidden lg:block w-px h-5 bg-[var(--color-line2)]" />
+            <span className="font-mono text-[10.5px] text-[var(--color-dim)] hidden sm:inline">v2.0</span>
+            {area === "console" && view !== "intake" && (
+              <button
+                onClick={reset}
+                className="font-mono text-[10px] uppercase tracking-widest text-[var(--color-dim)] hover:text-[var(--color-teal)] transition-colors"
+              >
+                reiniciar
+              </button>
+            )}
           </div>
         </div>
         <div className="h-px bg-gradient-to-r from-transparent via-[var(--color-line2)] to-transparent" />
       </header>
 
       <main className="flex-1">
-        <AILab />
+        {area === "academy" ? (
+          <Academy
+            ds={ds}
+            onOpenConsole={() => {
+              setArea("console");
+              window.scrollTo({ top: 0 });
+            }}
+          />
+        ) : area === "ailab" ? (
+          <AILab />
+        ) : area === "arch" ? (
+          <ArchitecturePage />
+        ) : (
+          <>
+            {view === "intake" && <IntakeView onAnalyze={handleAnalyze} />}
+            {view === "pipeline" && ds && <PipelineView ds={ds} onDone={() => setView("dashboard")} />}
+            {view === "dashboard" && ds && <Dashboard ds={ds} onNew={reset} />}
+          </>
+        )}
       </main>
 
       <footer className="relative z-10 border-t border-[var(--color-line)] mt-2">
         <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-4 flex flex-wrap items-center justify-between gap-2">
           <p className="font-mono text-[10px] text-[var(--color-dim)]">
-            Anthony.ia · IA Lab — respostas simuladas localmente para demonstração; nenhuma API externa é chamada.
+            Anthony.ia © 2026 — dados, mentoria e LLMs rodando direto no navegador.
           </p>
           <p className="font-mono text-[10px] text-[var(--color-dim)]">
-            ranking composto: raciocínio · código · velocidade · custo
+            nenhuma linha de dados sai da sua máquina
           </p>
         </div>
       </footer>

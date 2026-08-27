@@ -50,7 +50,7 @@ function MentorAvatar({ size = 56 }: { size?: number }) {
         <svg
           viewBox="0 0 32 32"
           style={{ width: size * 0.56, height: size * 0.56 }}
-          fill="none" stroke="#3edcb4" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+          fill="none" stroke="var(--color-teal)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
         >
           <path d="M16 4 29 27H3L16 4Z" />
           <path d="M16 12v15" opacity="0.65" strokeWidth="1.3" />
@@ -543,7 +543,7 @@ function ChatDock({ onGoModule, level }: { onGoModule: (id: string) => void; lev
       <button
         onClick={() => setOpen(true)}
         aria-label="Abrir chat com o mentor"
-        className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full bg-teal text-[#062019] flex items-center justify-center shadow-[0_12px_38px_-10px_rgba(62,220,180,0.6)] hover:scale-105 hover:bg-tealhi active:scale-95 transition-transform"
+        className="fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full bg-teal text-[#04211a] flex items-center justify-center shadow-[0_12px_38px_-10px_rgba(55,230,195,0.6)] hover:scale-105 hover:bg-tealhi active:scale-95 transition-transform"
       >
         <IconChat className="w-6 h-6" />
         <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-coral border-2 border-abyss" />
@@ -578,7 +578,7 @@ function ChatDock({ onGoModule, level }: { onGoModule: (id: string) => void; lev
         {msgs.map((m, i) =>
           m.role === "user" ? (
             <div key={i} className="flex justify-end">
-              <div className="rounded-lg rounded-tr-none bg-teal text-[#062019] px-3.5 py-2.5 max-w-[88%]">
+              <div className="rounded-lg rounded-tr-none bg-teal text-[#04211a] px-3.5 py-2.5 max-w-[88%]">
                 <p className="text-[12.5px] font-medium leading-relaxed">{m.text}</p>
               </div>
             </div>
@@ -645,7 +645,7 @@ function ChatDock({ onGoModule, level }: { onGoModule: (id: string) => void; lev
         <button
           type="submit"
           disabled={!input.trim() || typing}
-          className="w-9 h-9 rounded-lg bg-teal text-[#062019] flex items-center justify-center disabled:opacity-35 disabled:cursor-not-allowed hover:bg-tealhi transition-colors shrink-0"
+          className="w-9 h-9 rounded-lg bg-teal text-[#04211a] flex items-center justify-center disabled:opacity-35 disabled:cursor-not-allowed hover:bg-tealhi transition-colors shrink-0"
           aria-label="Enviar pergunta"
         >
           <IconSend className="w-4 h-4" />

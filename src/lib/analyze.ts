@@ -1,554 +1,409 @@
+/* Anthony.ia · motor de análise — roda 100% no navegador.
+   parse → tipagem → limpeza (duplicatas, nulos, outliers) → perfilamento
+   → correlação de Pearson → insights automáticos. */
+
 import Papa from "papaparse";
 
-/* ============================================================
-   Anthony.ia · motor de análise
-   ingestão → tipagem → limpeza → perfilamento → insights
-   ============================================================ */
+export type TimePoint = { t: string; v: number };
 
-export type ColType = "numeric" | "categorical" | "date";
-
-export interface TopValue {
-  value: string;
-  count: number;
-  pct: number;
+export function fmtSmart(n: number): string {
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${(n / 1_000_000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}M`;
+  if (abs >= 10_000) return `${(n / 1000).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}k`;
+  if (Number.isInteger(n)) return n.toLocaleString("pt-BR");
+  return n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 }
+
+export interface TopCat { value: string; count: number; pct: number }
 
 export interface ColumnProfile {
   name: string;
-  type: ColType;
+  type: "numeric" | "categorical" | "date";
   missing: number;
   missingPct: number;
   unique: number;
   values?: number[];
-  min?: number;
-  max?: number;
-  mean?: number;
-  median?: number;
-  std?: number;
-  q1?: number;
-  q3?: number;
-  iqr?: number;
-  skew?: number;
-  outlierCount: number;
-  top?: TopValue[];
+  mean?: number; median?: number; std?: number; min?: number; max?: number;
+  q1?: number; q3?: number; iqr?: number; skew?: number; outlierCount?: number;
+  top?: TopCat[];
+  dateMin?: string; dateMax?: string;
 }
 
-export interface CleanAction {
-  label: string;
-  count: number;
-  kind: "remove" | "impute" | "flag" | "normalize";
-}
-
-export interface Insight {
-  kind: "warn" | "good" | "info";
-  title: string;
-  detail: string;
-}
+export interface CleanAction { kind: "remove" | "impute" | "flag"; label: string; count: number }
+export interface Insight { kind: "warn" | "good" | "info"; title: string; detail: string }
 
 export interface Dataset {
   name: string;
+  originalRows: number;
+  finalRows: number;
   columns: string[];
-  rows: (string | null)[][];
-  profiles: ColumnProfile[];
+  rows: (string | number | null)[][];
   numericCols: string[];
   categoricalCols: string[];
   dateCols: string[];
-  originalRows: number;
-  finalRows: number;
+  profiles: ColumnProfile[];
   actions: CleanAction[];
-  missingFound: number;
-  quality: number;
-  insights: Insight[];
   correlation: { cols: string[]; matrix: number[][] };
+  insights: Insight[];
+  quality: number;
 }
 
-/* ---------------- parsing de texto ---------------- */
+const NULL_TOKENS = new Set(["", "null", "n/a", "na", "n.a", "nan", "none", "nil", "—", "–", "-", "?", "#n/d", "#ref!"]);
 
-const NULL_TOKENS = new Set([
-  "", "null", "nil", "n/a", "na", "nan", "-", "—", "none",
-  "indefinido", "não informado", "nao informado", "vazio", "?",
-]);
-
-function normalizeCell(raw: string): string | null {
-  const s = raw.trim();
-  if (NULL_TOKENS.has(s.toLowerCase())) return null;
-  return s;
-}
-
-export function parseNumber(s: string): number | null {
-  let v = s.trim();
-  if (!v) return null;
-  v = v.replace(/[R$\s%]/gi, "");
-  const lastC = v.lastIndexOf(",");
-  const lastD = v.lastIndexOf(".");
-  if (lastC >= 0 && lastD >= 0) {
-    if (lastC > lastD) v = v.replace(/\./g, "").replace(",", ".");
-    else v = v.replace(/,/g, "");
-  } else if (lastC >= 0) {
-    const decimals = v.length - lastC - 1;
-    if (decimals === 3 && v.length > 5 && lastC === v.indexOf(",")) v = v.replace(",", "");
-    else v = v.replace(",", ".");
+export function parseNum(raw: string): number | null {
+  let s = raw.trim().replace(/^(R\$|US\$|U\$|€|£)\s*/i, "").replace(/[\s\u00a0]/g, "");
+  if (!s) return null;
+  s = s.replace(/%$/, "");
+  const hasComma = s.includes(",");
+  const hasDot = s.includes(".");
+  if (hasComma && hasDot) {
+    if (s.lastIndexOf(",") > s.lastIndexOf(".")) s = s.replace(/\./g, "").replace(",", ".");
+    else s = s.replace(/,/g, "");
+  } else if (hasComma) {
+    s = s.replace(",", ".");
   }
-  const n = Number(v);
+  if (!/^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(s)) return null;
+  const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
 
-export function parseDate(s: string): number | null {
-  const t = s.trim();
-  const iso = t.match(/^(\d{4})-(\d{1,2})-(\d{1,2})([T\s](\d{1,2}):(\d{2}))?/);
-  if (iso) {
-    const d = new Date(
-      Date.UTC(+iso[1], +iso[2] - 1, +iso[3], +(iso[5] ?? 0), +(iso[6] ?? 0))
-    );
-    return isNaN(d.getTime()) ? null : d.getTime();
-  }
-  const br = t.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(\s(\d{1,2}):(\d{2}))?/);
-  if (br) {
-    const year = br[3].length === 2 ? 2000 + +br[3] : +br[3];
-    const d = new Date(Date.UTC(year, +br[2] - 1, +br[1], +(br[5] ?? 0), +(br[6] ?? 0)));
-    return isNaN(d.getTime()) ? null : d.getTime();
+export function parseDate(raw: string): Date | null {
+  const s = raw.trim();
+  if (!s) return null;
+  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})([T\s](\d{2}):(\d{2}))?/);
+  if (m) return new Date(+m[1], +m[2] - 1, +m[3], +(m[5] || 0), +(m[6] || 0));
+  m = s.match(/^(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{2,4})(\s(\d{1,2}):(\d{2}))?$/);
+  if (m) {
+    const yy = m[3].length === 2 ? 2000 + +m[3] : +m[3];
+    return new Date(yy, +m[2] - 1, +m[1], +(m[5] || 0), +(m[6] || 0));
   }
   return null;
 }
 
-function jsonToGrid(text: string): string[][] {
-  const parsed = JSON.parse(text);
-  const arr = Array.isArray(parsed) ? parsed : [parsed];
-  if (!arr.length || typeof arr[0] !== "object" || arr[0] === null) {
-    throw new Error("JSON sem estrutura tabular reconhecível.");
-  }
-  const header = Object.keys(arr[0]);
-  const rows = arr.map((obj: Record<string, unknown>) =>
-    header.map((h) => {
-      const v = obj[h];
-      return v === null || v === undefined ? "" : String(v);
-    })
-  );
-  return [header, ...rows];
-}
+const q = (sorted: number[], p: number) => {
+  const idx = (sorted.length - 1) * p;
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+};
 
-export function textToGrid(text: string): string[][] {
-  const trimmed = text.trim();
-  if (!trimmed) throw new Error("Nenhum dado recebido.");
-  if (trimmed.startsWith("[") || trimmed.startsWith("{")) return jsonToGrid(trimmed);
-  const res = Papa.parse<string[]>(trimmed, { skipEmptyLines: "greedy" });
-  const grid = res.data.filter((r) => r.some((c) => String(c).trim() !== ""));
-  if (grid.length < 2) throw new Error("Dados insuficientes — envie ao menos 3 linhas.");
-  return grid.map((r) => r.map((c) => String(c)));
-}
-
-/* ---------------- estatística ---------------- */
-
-const sortAsc = (a: number[]) => [...a].sort((x, y) => x - y);
-
-export function quantile(sorted: number[], q: number): number {
-  if (!sorted.length) return 0;
-  const pos = (sorted.length - 1) * q;
-  const lo = Math.floor(pos);
-  const hi = Math.ceil(pos);
-  if (lo === hi) return sorted[lo];
-  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
-}
-
-export function mean(a: number[]): number {
-  return a.length ? a.reduce((s, v) => s + v, 0) / a.length : 0;
-}
-
-export function std(a: number[], m?: number): number {
-  if (a.length < 2) return 0;
-  const mu = m ?? mean(a);
-  return Math.sqrt(a.reduce((s, v) => s + (v - mu) ** 2, 0) / (a.length - 1));
-}
-
-export function skewness(a: number[]): number {
-  if (a.length < 3) return 0;
-  const mu = mean(a);
-  const s = std(a, mu);
-  if (s === 0) return 0;
-  const n = a.length;
-  const m3 = a.reduce((acc, v) => acc + ((v - mu) / s) ** 3, 0) / n;
-  return (Math.sqrt(n * (n - 1)) / (n - 2)) * m3;
-}
-
-export function pearson(x: number[], y: number[]): number {
-  const n = Math.min(x.length, y.length);
-  if (n < 2) return 0;
-  const mx = mean(x.slice(0, n));
-  const my = mean(y.slice(0, n));
-  let num = 0;
-  let dx = 0;
-  let dy = 0;
+function pearson(xs: number[], ys: number[]): number {
+  const n = xs.length;
+  if (n < 3) return 0;
+  let sx = 0, sy = 0;
+  for (let i = 0; i < n; i++) { sx += xs[i]; sy += ys[i]; }
+  const mx = sx / n, my = sy / n;
+  let num = 0, dx = 0, dy = 0;
   for (let i = 0; i < n; i++) {
-    const a = x[i] - mx;
-    const b = y[i] - my;
-    num += a * b;
-    dx += a * a;
-    dy += b * b;
+    const a = xs[i] - mx, b = ys[i] - my;
+    num += a * b; dx += a * a; dy += b * b;
   }
   const den = Math.sqrt(dx * dy);
   return den === 0 ? 0 : num / den;
 }
 
-/* ---------------- pipeline principal ---------------- */
+export function analyze(text: string, name: string): Dataset | null {
+  const res = Papa.parse<string[]>(text.trim(), { skipEmptyLines: "greedy" });
+  const grid = res.data.filter((r) => r.some((c) => String(c).trim() !== ""));
+  if (grid.length < 3) return null;
 
-export function analyzeDataset(text: string, sourceName: string): Dataset {
-  const grid = textToGrid(text);
-  const rawHeader = grid[0];
-  const header = rawHeader.map((h, i) => {
-    const base = h.trim() || `coluna_${i + 1}`;
-    const dupe = rawHeader.slice(0, i).filter((x) => x === h).length;
-    return dupe ? `${base}_${dupe + 1}` : base;
-  });
-  const width = header.length;
-  const bodyRaw = grid.slice(1).map((r) => {
-    const r2 = [...r];
-    while (r2.length < width) r2.push("");
-    return r2.slice(0, width);
-  });
+  const header = grid[0].map((h, i) => (String(h).trim() || `coluna_${i + 1}`));
+  const body = grid.slice(1).map((r) => header.map((_, i) => {
+    const v = String(r[i] ?? "").trim();
+    return NULL_TOKENS.has(v.toLowerCase()) ? null : v;
+  }));
 
-  const originalRows = bodyRaw.length;
+  const originalRows = body.length;
+  const ncols = header.length;
 
-  // 1. normalização de células
-  let normalized = 0;
-  const body: (string | null)[][] = bodyRaw.map((row) =>
-    row.map((cell) => {
-      const n = normalizeCell(cell);
-      if (n === null && cell.trim() !== "") normalized++;
-      return n;
-    })
-  );
-
-  // 2. remoção de duplicatas exatas
-  const seen = new Set<string>();
-  let duplicatesRemoved = 0;
-  const deduped = body.filter((row) => {
-    const key = row.map((c) => c ?? "∅").join("\u0001");
-    if (seen.has(key)) {
-      duplicatesRemoved++;
-      return false;
+  /* ---- tipagem ---- */
+  const types: ("numeric" | "categorical" | "date")[] = header.map((_, c) => {
+    let num = 0, dat = 0, tot = 0;
+    for (const row of body) {
+      const v = row[c];
+      if (v === null) continue;
+      tot++;
+      if (parseNum(v) !== null) num++;
+      else if (parseDate(v)) dat++;
     }
-    seen.add(key);
-    return true;
-  });
-
-  // 3. tipagem automática
-  const types: ColType[] = header.map((_, c) => {
-    const vals = deduped.map((r) => r[c]).filter((v): v is string => v !== null);
-    if (vals.length === 0) return "categorical";
-    const sample = vals.slice(0, 200);
-    const dateScore = sample.filter((v) => parseDate(v) !== null).length / sample.length;
-    if (dateScore >= 0.9) return "date";
-    const numScore = sample.filter((v) => parseNumber(v) !== null).length / sample.length;
-    if (numScore >= 0.85) return "numeric";
+    if (tot === 0) return "categorical";
+    if (num / tot > 0.78) return "numeric";
+    if (dat / tot > 0.78) return "date";
     return "categorical";
   });
 
-  // 4. limpeza + perfilamento por coluna
-  let missingFound = 0;
-  let numericImputed = 0;
-  let categoricalImputed = 0;
-  let outliersTotal = 0;
+  /* ---- duplicatas exatas ---- */
+  const seen = new Set<string>();
+  let dupes = 0;
+  const dedup: (string | null)[][] = [];
+  for (const row of body) {
+    const key = row.join("\u0001");
+    if (seen.has(key)) { dupes++; continue; }
+    seen.add(key);
+    dedup.push(row);
+  }
 
-  const profiles: ColumnProfile[] = header.map((name, c) => {
-    const col = deduped.map((r) => r[c]);
-    const missing = col.filter((v) => v === null).length;
-    missingFound += missing;
-    const present = col.filter((v): v is string => v !== null);
-    const unique = new Set(present).size;
-    const type = types[c];
+  /* ---- valores numéricos (antes da imputação) ---- */
+  const numVals: (number | null)[][] = dedup.map((row) =>
+    row.map((v, c) => (types[c] === "numeric" ? (v === null ? null : parseNum(v)) : null))
+  );
 
-    const profile: ColumnProfile = {
-      name,
-      type,
-      missing,
-      missingPct: (missing / Math.max(1, col.length)) * 100,
-      unique,
-      outlierCount: 0,
-    };
-
-    if (type === "numeric") {
-      const nums = present
-        .map(parseNumber)
-        .filter((v): v is number => v !== null);
-      const sorted = sortAsc(nums);
-      const med = quantile(sorted, 0.5);
-      const q1 = quantile(sorted, 0.25);
-      const q3 = quantile(sorted, 0.75);
-      const iqr = q3 - q1;
-      const fenceLo = q1 - 1.5 * iqr;
-      const fenceHi = q3 + 1.5 * iqr;
-      const outliers = nums.filter((v) => v < fenceLo || v > fenceHi);
-      profile.outlierCount = outliers.length;
-      outliersTotal += outliers.length;
-
-      // imputação de nulos pela mediana (gravada no dataset)
-      col.forEach((v, i) => {
-        if (v === null) {
-          deduped[i][c] = med.toFixed(4).replace(/\.?0+$/, "");
-          numericImputed++;
-        }
-      });
-
-      const finalNums = col.map((v) => parseNumber(v as string) ?? med);
-      const sortedF = sortAsc(finalNums);
-      const mu = mean(finalNums);
-      profile.values = finalNums;
-      profile.min = sortedF[0];
-      profile.max = sortedF[sortedF.length - 1];
-      profile.mean = mu;
-      profile.median = quantile(sortedF, 0.5);
-      profile.std = std(finalNums, mu);
-      profile.q1 = quantile(sortedF, 0.25);
-      profile.q3 = quantile(sortedF, 0.75);
-      profile.iqr = profile.q3 - profile.q1;
-      profile.skew = skewness(finalNums);
-    } else if (type === "categorical") {
-      col.forEach((v, i) => {
-        if (v === null) {
-          deduped[i][c] = "N/D";
-          categoricalImputed++;
-        }
-      });
-      const freq = new Map<string, number>();
-      present.forEach((v) => freq.set(v, (freq.get(v) ?? 0) + 1));
-      profile.top = [...freq.entries()]
-        .map(([value, count]) => ({ value, count, pct: (count / Math.max(1, present.length)) * 100 }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 10);
-    }
-    return profile;
+  /* ---- imputação ---- */
+  const medians: (number | null)[] = header.map((_, c) => {
+    if (types[c] !== "numeric") return null;
+    const vals = numVals.map((r) => r[c]).filter((v): v is number => v !== null && Number.isFinite(v));
+    if (!vals.length) return null;
+    vals.sort((a, b) => a - b);
+    return q(vals, 0.5);
   });
 
-  const numericCols = profiles.filter((p) => p.type === "numeric").map((p) => p.name);
-  const categoricalCols = profiles.filter((p) => p.type === "categorical").map((p) => p.name);
-  const dateCols = profiles.filter((p) => p.type === "date").map((p) => p.name);
-
-  // 5. matriz de correlação (Pearson)
-  const corrCols = numericCols.slice(0, 10);
-  const matrix = corrCols.map((a) =>
-    corrCols.map((b) => {
-      if (a === b) return 1;
-      const pa = profiles.find((p) => p.name === a)!;
-      const pb = profiles.find((p) => p.name === b)!;
-      return pearson(pa.values ?? [], pb.values ?? []);
+  let imputed = 0;
+  const cleanNum: (number | null)[][] = numVals.map((row) =>
+    row.map((v, c) => {
+      if (types[c] !== "numeric") return null;
+      if (v === null || !Number.isFinite(v)) { imputed++; return medians[c]; }
+      return v;
     })
   );
 
-  // 6. score de qualidade
-  const cells = originalRows * width;
-  const quality = Math.round(
-    Math.min(
-      99,
-      Math.max(
-        35,
-        100 -
-          (missingFound / Math.max(1, cells)) * 260 -
-          (duplicatesRemoved / Math.max(1, originalRows)) * 140 -
-          (outliersTotal / Math.max(1, cells)) * 90
-      )
-    )
-  );
-
-  // 7. ações de limpeza
-  const actions: CleanAction[] = [];
-  if (normalized) actions.push({ label: "Células inválidas normalizadas para nulo", count: normalized, kind: "normalize" });
-  if (duplicatesRemoved) actions.push({ label: "Linhas duplicadas removidas", count: duplicatesRemoved, kind: "remove" });
-  if (numericImputed) actions.push({ label: "Nulos numéricos imputados pela mediana", count: numericImputed, kind: "impute" });
-  if (categoricalImputed) actions.push({ label: "Nulos categóricos imputados por N/D", count: categoricalImputed, kind: "impute" });
-  if (outliersTotal) actions.push({ label: "Outliers sinalizados (cerca de 1,5×IQR)", count: outliersTotal, kind: "flag" });
-
-  // 8. insights automáticos
-  const insights = buildInsights({
-    profiles, matrix, corrCols, duplicatesRemoved, missingFound,
-    originalRows, quality, outliersTotal, numericCols, dateCols,
+  const modes: string[] = header.map((_, c) => {
+    if (types[c] === "numeric") return "";
+    const freq = new Map<string, number>();
+    for (const row of dedup) {
+      const v = row[c];
+      if (v !== null) freq.set(v, (freq.get(v) || 0) + 1);
+    }
+    let best = "não informado", bestN = -1;
+    freq.forEach((n, k) => { if (n > bestN) { best = k; bestN = n; } });
+    return best;
   });
 
+  let imputedCat = 0;
+  const cleanRows: (string | number | null)[][] = dedup.map((row, r) =>
+    row.map((v, c) => {
+      if (v !== null) return types[c] === "numeric" ? (cleanNum[r][c] as number) : v;
+      if (types[c] === "numeric") return cleanNum[r][c];
+      imputedCat++;
+      return modes[c];
+    })
+  );
+
+  /* ---- outliers (Tukey 1,5×IQR) ---- */
+  let outlierTotal = 0;
+  const outlierCounts: number[] = header.map((_, c) => {
+    if (types[c] !== "numeric") return 0;
+    const vals = cleanNum.map((r) => r[c]).filter((v): v is number => v !== null);
+    if (vals.length < 8) return 0;
+    const sorted = [...vals].sort((a, b) => a - b);
+    const q1v = q(sorted, 0.25), q3v = q(sorted, 0.75);
+    const iqr = q3v - q1v;
+    const lo = q1v - 1.5 * iqr, hi = q3v + 1.5 * iqr;
+    const n = vals.filter((v) => v < lo || v > hi).length;
+    outlierTotal += n;
+    return n;
+  });
+
+  /* ---- perfis ---- */
+  const profiles: ColumnProfile[] = header.map((colName, c) => {
+    const missing = dedup.filter((r) => r[c] === null).length;
+    const base: ColumnProfile = {
+      name: colName,
+      type: types[c],
+      missing,
+      missingPct: (missing / dedup.length) * 100,
+      unique: new Set(dedup.map((r) => r[c]).filter((v) => v !== null)).size,
+    };
+    if (types[c] === "numeric") {
+      const vals = cleanNum.map((r) => r[c]).filter((v): v is number => v !== null);
+      const sorted = [...vals].sort((a, b) => a - b);
+      const n = sorted.length;
+      const mean = vals.reduce((s, v) => s + v, 0) / Math.max(1, n);
+      const variance = vals.reduce((s, v) => s + (v - mean) * (v - mean), 0) / Math.max(1, n - 1);
+      const std = Math.sqrt(variance);
+      const q1v = n ? q(sorted, 0.25) : 0;
+      const q3v = n ? q(sorted, 0.75) : 0;
+      let skew = 0;
+      if (std > 0 && n > 2) {
+        const m3 = vals.reduce((s, v) => s + Math.pow(v - mean, 3), 0) / n;
+        skew = m3 / Math.pow(std, 3);
+      }
+      Object.assign(base, {
+        values: vals, mean, median: n ? q(sorted, 0.5) : 0, std,
+        min: sorted[0] ?? 0, max: sorted[n - 1] ?? 0,
+        q1: q1v, q3: q3v, iqr: q3v - q1v, skew,
+        outlierCount: outlierCounts[c],
+      });
+    } else if (types[c] === "categorical") {
+      const freq = new Map<string, number>();
+      for (const r of cleanRows) {
+        const v = r[c];
+        if (v !== null) freq.set(String(v), (freq.get(String(v)) || 0) + 1);
+      }
+      const total = cleanRows.length;
+      const top: TopCat[] = [...freq.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([value, count]) => ({ value, count, pct: (count / total) * 100 }));
+      base.top = top;
+    } else {
+      const dates = dedup.map((r) => (r[c] === null ? null : parseDate(r[c] as string)))
+        .filter((d): d is Date => d !== null);
+      if (dates.length) {
+        const fmt = (d: Date) => `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+        const min = new Date(Math.min(...dates.map((d) => d.getTime())));
+        const max = new Date(Math.max(...dates.map((d) => d.getTime())));
+        base.dateMin = fmt(min);
+        base.dateMax = fmt(max);
+      }
+    }
+    return base;
+  });
+
+  /* ---- correlação ---- */
+  const numColsIdx = header.map((_, c) => c).filter((c) => types[c] === "numeric" && (profiles[c].values?.length ?? 0) > 4).slice(0, 8);
+  const corCols = numColsIdx.map((c) => header[c]);
+  const corMat: number[][] = numColsIdx.map((ci) =>
+    numColsIdx.map((cj) => {
+      const xs: number[] = [], ys: number[] = [];
+      for (let r = 0; r < cleanNum.length; r++) {
+        const a = cleanNum[r][ci], b = cleanNum[r][cj];
+        if (a !== null && b !== null) { xs.push(a); ys.push(b); }
+      }
+      return ci === cj ? 1 : pearson(xs, ys);
+    })
+  );
+
+  /* ---- ações ---- */
+  const actions: CleanAction[] = [];
+  if (dupes) actions.push({ kind: "remove", label: `Duplicatas exatas removidas`, count: dupes });
+  const imputedNum = imputed;
+  if (imputedNum) actions.push({ kind: "impute", label: `Células numéricas imputadas (mediana)`, count: imputedNum });
+  if (imputedCat) actions.push({ kind: "impute", label: `Células categóricas imputadas (moda)`, count: imputedCat });
+  if (outlierTotal) actions.push({ kind: "flag", label: `Outliers sinalizados (Tukey 1,5×IQR)`, count: outlierTotal });
+
+  /* ---- insights ---- */
+  const insights: Insight[] = [];
+  let bestR = 0, bi = -1, bj = -1;
+  for (let i = 0; i < corCols.length; i++)
+    for (let j = i + 1; j < corCols.length; j++)
+      if (Math.abs(corMat[i][j]) > Math.abs(bestR)) { bestR = corMat[i][j]; bi = i; bj = j; }
+  if (bi >= 0 && Math.abs(bestR) >= 0.55) {
+    insights.push({
+      kind: "good",
+      title: `Correlação ${bestR > 0 ? "positiva" : "negativa"} forte`,
+      detail: `${corCols[bi]} e ${corCols[bj]} dançam juntas com r = ${bestR.toFixed(2).replace(".", ",")}. ` +
+        `O gráfico de dispersão com regressão OLS mostra a reta — investigue causalidade antes de afirmar causa.`,
+    });
+  }
+  const skewProf = profiles.find((p) => p.type === "numeric" && Math.abs(p.skew ?? 0) > 1);
+  if (skewProf) {
+    insights.push({
+      kind: "warn",
+      title: `Distribuição assimétrica em ${skewProf.name}`,
+      detail: `Assimetria g₁ = ${(skewProf.skew ?? 0).toFixed(2).replace(".", ",")}: a média é puxada pela cauda ` +
+        `e discorda da mediana. Para falar em “típico”, cite a mediana — e o histograma mostra exatamente o porquê.`,
+    });
+  }
+  const outProf = profiles.find((p) => (p.outlierCount ?? 0) > 0);
+  if (outProf) {
+    insights.push({
+      kind: "info",
+      title: `${outProf.outlierCount} ponto(s) fora das cercas em ${outProf.name}`,
+      detail: `Valores além de Q3 + 1,5×IQR (ou abaixo de Q1 − 1,5×IQR). Podem ser erros de digitação ou os casos mais ` +
+        `interessantes do conjunto — o boxplot exibe cada um como ponto vermelho.`,
+    });
+  }
+  const missingProf = profiles.find((p) => p.missingPct > 2);
+  if (missingProf) {
+    insights.push({
+      kind: "warn",
+      title: `Lacunas relevantes em ${missingProf.name}`,
+      detail: `${missingProf.missing} células (${missingProf.missingPct.toFixed(1).replace(".", ",")}%) chegaram vazias e foram ` +
+        `imputadas por ${missingProf.type === "numeric" ? "mediana" : "moda"}. Nulo raramente é aleatório: questione a origem.`,
+    });
+  }
+  const domProf = profiles.find((p) => p.type === "categorical" && (p.top?.[0]?.pct ?? 0) > 45 && (p.top?.length ?? 0) > 1);
+  if (domProf) {
+    insights.push({
+      kind: "info",
+      title: `Concentração em ${domProf.name}`,
+      detail: `“${domProf.top![0].value}” responde por ${domProf.top![0].pct.toFixed(0)}% das linhas. Quando uma categoria domina, ` +
+        `médias globais escondem o comportamento das minorias — segmente antes de concluir.`,
+    });
+  }
+  if (!insights.length) {
+    insights.push({
+      kind: "info",
+      title: "Conjunto íntegro",
+      detail: "Sem duplicatas, lacunas ou outliers relevantes. O que este dado contar, conta com confiança — aproveite para explorar as relações.",
+    });
+  }
+
+  /* ---- qualidade ---- */
+  const cells = dedup.length * ncols;
+  const missingCells = profiles.reduce((s, p) => s + p.missing, 0);
+  let qualityScore = 100;
+  qualityScore -= Math.min(18, (dupes / Math.max(1, originalRows)) * 100 * 2);
+  qualityScore -= Math.min(25, (missingCells / Math.max(1, cells)) * 100 * 0.8);
+  qualityScore -= Math.min(8, (outlierTotal / Math.max(1, dedup.length)) * 100);
+  const quality = Math.round(Math.max(40, Math.min(100, qualityScore)));
+
   return {
-    name: sourceName.replace(/\.(csv|json|tsv|txt)$/i, ""),
-    columns: header,
-    rows: deduped,
-    profiles,
-    numericCols,
-    categoricalCols,
-    dateCols,
+    name,
     originalRows,
-    finalRows: deduped.length,
+    finalRows: dedup.length,
+    columns: header,
+    rows: cleanRows,
+    numericCols: header.filter((_, c) => types[c] === "numeric"),
+    categoricalCols: header.filter((_, c) => types[c] === "categorical"),
+    dateCols: header.filter((_, c) => types[c] === "date"),
+    profiles,
     actions,
-    missingFound,
+    correlation: { cols: corCols, matrix: corMat },
+    insights: insights.slice(0, 6),
     quality,
-    insights,
-    correlation: { cols: corrCols, matrix },
   };
 }
 
-/* ---------------- insights ---------------- */
-
-function buildInsights(ctx: {
-  profiles: ColumnProfile[];
-  matrix: number[][];
-  corrCols: string[];
-  duplicatesRemoved: number;
-  missingFound: number;
-  originalRows: number;
-  quality: number;
-  outliersTotal: number;
-  numericCols: string[];
-  dateCols: string[];
-}): Insight[] {
-  const out: Insight[] = [];
-
-  if (ctx.duplicatesRemoved > 0) {
-    out.push({
-      kind: "warn",
-      title: `${ctx.duplicatesRemoved} duplicatas exatas removidas`,
-      detail: `${((ctx.duplicatesRemoved / ctx.originalRows) * 100).toFixed(1)}% do volume original era repetição — já expurgado antes do perfilamento.`,
-    });
-  }
-
-  const dirtiest = [...ctx.profiles].sort((a, b) => b.missingPct - a.missingPct)[0];
-  if (dirtiest && dirtiest.missingPct > 8) {
-    out.push({
-      kind: "warn",
-      title: `“${dirtiest.name}” chegou com ${dirtiest.missingPct.toFixed(1)}% de lacunas`,
-      detail:
-        dirtiest.type === "numeric"
-          ? `Nulos imputados pela mediana (${fmtSmart(dirtiest.median ?? 0)}) para preservar a distribuição. Avalie descarte se o viés importar.`
-          : "Lacunas preenchidas com N/D para não inflar categorias reais.",
-    });
-  }
-
-  let best = { r: 0, a: "", b: "" };
-  for (let i = 0; i < ctx.corrCols.length; i++) {
-    for (let j = i + 1; j < ctx.corrCols.length; j++) {
-      const r = ctx.matrix[i][j];
-      if (Math.abs(r) > Math.abs(best.r)) best = { r, a: ctx.corrCols[i], b: ctx.corrCols[j] };
-    }
-  }
-  if (Math.abs(best.r) >= 0.6) {
-    out.push({
-      kind: "good",
-      title: `Correlação ${best.r > 0 ? "positiva" : "inversa"} forte: ${best.a} × ${best.b}`,
-      detail: `Pearson r = ${best.r.toFixed(2)} (r² = ${(best.r ** 2).toFixed(2)}). ${Math.abs(best.r) >= 0.85 ? "Candidatas a colinearidade em modelos regressivos." : "Relação digna de investigação causal."}`,
-    });
-  }
-
-  const outCol = [...ctx.profiles].sort((a, b) => b.outlierCount - a.outlierCount)[0];
-  if (outCol && outCol.outlierCount > 0) {
-    out.push({
-      kind: "info",
-      title: `${ctx.outliersTotal} outliers além das cercas de Tukey`,
-      detail: `Concentrados em “${outCol.name}” (${outCol.outlierCount}). Pontos visíveis no boxplot — verifique se são erros de medição ou eventos legítimos.`,
-    });
-  }
-
-  const skewed = ctx.profiles.filter((p) => p.type === "numeric" && Math.abs(p.skew ?? 0) > 1.1)
-    .sort((a, b) => Math.abs(b.skew ?? 0) - Math.abs(a.skew ?? 0))[0];
-  if (skewed) {
-    out.push({
-      kind: "info",
-      title: `“${skewed.name}” tem assimetria ${ (skewed.skew ?? 0) > 0 ? "à direita" : "à esquerda"} (g₁ = ${(skewed.skew ?? 0).toFixed(2)})`,
-      detail: "Para inferência paramétrica, considere transformação logarítmica ou testes não paramétricos.",
-    });
-  }
-
-  if (ctx.dateCols.length && ctx.numericCols.length) {
-    out.push({
-      kind: "info",
-      title: "Eixo temporal detectado",
-      detail: `“${ctx.dateCols[0]}” habilita a série histórica — agregações automáticas por dia, semana ou mês conforme a amplitude.`,
-    });
-  }
-
-  if (ctx.quality >= 90) {
-    out.push({
-      kind: "good",
-      title: "Confiabilidade alta do conjunto",
-      detail: `Score de qualidade ${ctx.quality}/100 após a higienização — seguro para reportes executivos.`,
-    });
-  } else if (ctx.quality < 75) {
-    out.push({
-      kind: "warn",
-      title: "Qualidade moderada — interprete com cautela",
-      detail: `Score ${ctx.quality}/100. O volume de lacunas ou duplicatas sugere revisão da coleta na origem.`,
-    });
-  }
-
-  if (ctx.numericCols.length >= 3) {
-    out.push({
-      kind: "info",
-      title: `${ctx.numericCols.length} variáveis numéricas perfiladas`,
-      detail: "Matriz de Pearson, quartis e desvio-padrão prontos para alimentar modelos multivariados.",
-    });
-  }
-
-  return out.slice(0, 6);
-}
-
-export function fmtSmart(n: number): string {
-  const abs = Math.abs(n);
-  if (abs >= 1_000_000) return (n / 1_000_000).toFixed(2).replace(".", ",") + "M";
-  if (abs >= 10_000) return (n / 1000).toFixed(1).replace(".", ",") + "k";
-  if (abs >= 100) return n.toFixed(0);
-  if (abs >= 1) return n.toFixed(2).replace(".", ",");
-  return n.toFixed(3).replace(".", ",");
-}
-
-/* ---------------- séries temporais ---------------- */
-
-export interface TimePoint {
-  t: string;
-  ts: number;
-  v: number;
-  c: number;
-}
-
+/* ---- série temporal com agregação automática ---- */
 export function buildTimeSeries(
-  rows: (string | null)[][],
+  rows: (string | number | null)[][],
   dateCol: string,
   numCol: string,
   columns: string[]
-): TimePoint[] {
+): { t: string; v: number }[] {
   const di = columns.indexOf(dateCol);
   const ni = columns.indexOf(numCol);
   if (di < 0 || ni < 0) return [];
-  const pairs: { ts: number; v: number }[] = [];
+  const pts: { d: Date; v: number }[] = [];
   for (const r of rows) {
-    const d = r[di] ? parseDate(r[di] as string) : null;
-    const v = r[ni] !== null ? parseNumber(r[ni] as string) : null;
-    if (d !== null && v !== null) pairs.push({ ts: d, v });
+    const raw = r[di];
+    const val = r[ni];
+    if (raw === null || val === null) continue;
+    const d = typeof raw === "string" ? parseDate(raw) : null;
+    const v = typeof val === "number" ? val : parseNum(String(val));
+    if (d && v !== null) pts.push({ d, v });
   }
-  if (!pairs.length) return [];
-  pairs.sort((a, b) => a.ts - b.ts);
-  const spanDays = (pairs[pairs.length - 1].ts - pairs[0].ts) / 86_400_000;
-  const mode: "day" | "week" | "month" = spanDays <= 45 ? "day" : spanDays <= 400 ? "week" : "month";
-
-  const bucketKey = (ts: number) => {
-    const d = new Date(ts);
-    if (mode === "day") return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
-    if (mode === "week") {
-      const day = d.getUTCDay();
-      return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - ((day + 6) % 7));
+  if (!pts.length) return [];
+  const min = Math.min(...pts.map((p) => p.d.getTime()));
+  const max = Math.max(...pts.map((p) => p.d.getTime()));
+  const days = (max - min) / 86_400_000;
+  const buckets = new Map<string, { s: number; n: number }>();
+  const keyOf = (d: Date) => {
+    if (days <= 45) return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (days <= 400) {
+      const wk = new Date(d.getTime());
+      wk.setDate(wk.getDate() - ((wk.getDay() + 6) % 7));
+      return `${String(wk.getDate()).padStart(2, "0")}/${String(wk.getMonth() + 1).padStart(2, "0")}`;
     }
-    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+    const names = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+    return `${names[d.getMonth()]}/${String(d.getFullYear()).slice(2)}`;
   };
-
-  const groups = new Map<number, { sum: number; c: number }>();
-  pairs.forEach((p) => {
-    const k = bucketKey(p.ts);
-    const g = groups.get(k) ?? { sum: 0, c: 0 };
-    g.sum += p.v;
-    g.c++;
-    groups.set(k, g);
-  });
-
-  const fmt = (ts: number) => {
-    const d = new Date(ts);
-    if (mode === "month")
-      return d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(".", "");
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
-  };
-
-  return [...groups.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([ts, g]) => ({ t: fmt(ts), ts, v: g.sum / g.c, c: g.c }));
+  for (const p of pts) {
+    const k = keyOf(p.d);
+    const b = buckets.get(k) || { s: 0, n: 0 };
+    b.s += p.v; b.n++;
+    buckets.set(k, b);
+  }
+  return [...buckets.entries()].map(([t, b]) => ({ t, v: b.s / b.n }));
 }
