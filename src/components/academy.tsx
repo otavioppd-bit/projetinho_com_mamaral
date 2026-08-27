@@ -11,6 +11,9 @@ import {
   IconSend, IconSpark, IconX, Reveal,
 } from "./ui";
 import { IMAGE_ALIAS, MENTOR_AVATAR, MODULE_IMAGES } from "../lib/images";
+import {
+  isSupabaseConfigured, loadAcademyProgress, saveAcademyProgress,
+} from "../lib/supabase";
 
 /* ---------------- typewriter ---------------- */
 
@@ -685,25 +688,45 @@ export function Academy({
   const greeting = useMemo(() => mentorGreeting(level, ds), [level, ds]);
   const [activeId, setActiveId] = useState(playbook[0].id);
   const [visited, setVisited] = useState<Set<string>>(() => loadVisited(level));
+  const mergedRef = useRef(false);
+
+  /* com o banco conectado, o progresso da trilha segue o usuário:
+     une o que está no Supabase com o que está neste navegador */
+  useEffect(() => {
+    if (!isSupabaseConfigured || mergedRef.current) return;
+    mergedRef.current = true;
+    void loadAcademyProgress().then((rows) => {
+      const row = rows.find((r) => r.level === level);
+      if (!row?.visited?.length) return;
+      setVisited((local) => {
+        const merged = new Set([...local, ...row.visited]);
+        if (merged.size !== local.size) persistVisited(level, merged, playbook.length);
+        return merged;
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* garante que o módulo ativo exista ao trocar de nível */
   useEffect(() => {
     if (!playbook.some((m) => m.id === activeId)) setActiveId(playbook[0].id);
   }, [playbook, activeId]);
 
-  const persistVisited = (lv: Level, v: Set<string>) => {
+  const persistVisited = (lv: Level, v: Set<string>, total: number) => {
     try {
       localStorage.setItem(`anthony_trilha_${lv}`, JSON.stringify([...v]));
     } catch {
       /* privado */
     }
+    /* sync real com o banco (no-op em modo local) */
+    if (isSupabaseConfigured) void saveAcademyProgress(lv, [...v], total);
   };
 
   const go = (id: string) => {
     setActiveId(id);
     setVisited((v) => {
       const nv = new Set(v).add(id);
-      persistVisited(level, nv);
+      persistVisited(level, nv, playbook.length);
       return nv;
     });
     window.scrollTo({ top: 0, behavior: "smooth" });

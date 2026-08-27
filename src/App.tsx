@@ -177,6 +177,7 @@ export default function App() {
         columns: parsed.columns.length,
         quality: parsed.quality,
         interventions: parsed.actions.map((a) => ({ label: a.label, count: a.count, kind: a.kind })),
+        insights: parsed.insights,
       }).then((ok) => {
         if (ok) {
           setSavedFlash(true);

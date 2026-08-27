@@ -80,6 +80,7 @@ export interface DatasetMeta {
   columns: number;
   quality: number;
   interventions: { label: string; count: number; kind: string }[];
+  insights?: { title: string; detail: string; kind: string }[];
 }
 
 /* formato como o Postgres devolve (snake_case) */
@@ -109,6 +110,7 @@ export async function saveDatasetMeta(m: DatasetMeta): Promise<boolean> {
     columns: m.columns,
     quality: m.quality,
     interventions: m.interventions,
+    insights: m.insights ?? [],
   });
   return !error;
 }
@@ -121,4 +123,42 @@ export async function listDatasets(limit = 12): Promise<DatasetRow[] | null> {
     .order("created_at", { ascending: false })
     .limit(limit);
   return error ? null : (data as DatasetRow[]);
+}
+
+/* ================= trilhas de mentoria (academy_progress) ================= */
+
+export interface AcademyProgressRow {
+  level: string;
+  visited: string[];
+  total_modules: number;
+  updated_at: string;
+}
+
+export async function loadAcademyProgress(): Promise<AcademyProgressRow[]> {
+  if (!sb) return [];
+  const { data, error } = await sb
+    .from("academy_progress")
+    .select("level, visited, total_modules, updated_at");
+  if (error) {
+    console.warn("academy_progress indisponível:", error.message);
+    return [];
+  }
+  return (data ?? []) as AcademyProgressRow[];
+}
+
+export async function saveAcademyProgress(
+  level: string,
+  visited: string[],
+  totalModules: number
+): Promise<boolean> {
+  if (!sb) return false;
+  const {
+    data: { user },
+  } = await sb.auth.getUser();
+  if (!user) return false;
+  const { error } = await sb.from("academy_progress").upsert(
+    { user_id: user.id, level, visited, total_modules: totalModules },
+    { onConflict: "user_id,level" }
+  );
+  return !error;
 }
