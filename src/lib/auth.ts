@@ -1,10 +1,22 @@
 /* Anthony.ia · camada de acesso
    ---------------------------------------------------------------
-   Local-first por design: a sessão vive no navegador (localStorage)
-   e a "verificação" de credenciais roda em transporte trocável —
-   quando o servidor existir, basta apontar `AUTH_ENDPOINT` que o
-   restante do app não muda uma linha. Estruturado para escalar:
-   sessão com expiração, hash com salt e perfil por função. */
+   Transporte duplo: com VITE_SUPABASE_URL/KEY configurados, login,
+   registro e sessão usam o Supabase Auth de verdade (com refresh de
+   token). Sem as chaves, o app segue 100% local-first — a interface
+   não muda uma linha nos dois modos. */
+
+import { isSupabaseConfigured, sb, upsertProfile } from "./supabase";
+
+export const authMode: "supabase" | "local" = isSupabaseConfigured ? "supabase" : "local";
+
+function translateAuthError(msg?: string): string {
+  if (!msg) return "Não foi possível autenticar. Tente novamente.";
+  if (/invalid login credentials/i.test(msg)) return "E-mail ou senha incorretos.";
+  if (/already registered/i.test(msg)) return "Já existe uma conta com este e-mail — entre com ela.";
+  if (/rate limit/i.test(msg)) return "Muitas tentativas — aguarde um instante.";
+  if (/email/i.test(msg) && /confirm/i.test(msg)) return "Confirme seu e-mail na caixa de entrada e entre novamente.";
+  return msg;
+}
 
 export const ROLES = [
   { id: "estagio", label: "Estágio em dados", level: "junior" as const },
@@ -135,11 +147,41 @@ function initialsOf(name: string): string {
   return (a + b).toUpperCase();
 }
 
+function sessionFromMeta(
+  email: string,
+  meta: Record<string, unknown>,
+  remember = true
+): Session {
+  const name = (meta.full_name as string) || email.split("@")[0];
+  return {
+    name,
+    email,
+    role: ((meta.role as RoleId) || "analista"),
+    company: (meta.company as string) || "—",
+    initials: initialsOf(name),
+    loggedAt: Date.now(),
+    remember,
+  };
+}
+
 export async function signIn(
   email: string,
   secret: string,
   remember: boolean
 ): Promise<{ ok: true; session: Session } | { ok: false; error: string }> {
+  /* ---- transporte Supabase (quando configurado) ---- */
+  if (sb) {
+    const { data, error } = await sb.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password: secret,
+    });
+    if (error || !data.user) return { ok: false, error: translateAuthError(error?.message) };
+    const session = sessionFromMeta(data.user.email ?? email, (data.user.user_metadata ?? {}) as Record<string, unknown>, remember);
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    return { ok: true, session };
+  }
+
+  /* ---- transporte local (demo) ---- */
   const user = await transportSignIn(email.trim(), secret);
   if (!user) {
     return { ok: false, error: "E-mail ou senha incorretos. Use o perfil demo se estiver testando." };
@@ -165,8 +207,44 @@ export async function signUp(input: {
   company: string;
   remember: boolean;
 }): Promise<{ ok: true; session: Session } | { ok: false; error: string }> {
-  await new Promise((res) => setTimeout(res, 800 + Math.random() * 300));
   const email = input.email.trim().toLowerCase();
+
+  /* ---- transporte Supabase (quando configurado) ---- */
+  if (sb) {
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password: input.secret,
+      options: {
+        data: {
+          full_name: input.name.trim(),
+          role: input.role,
+          company: input.company.trim() || "—",
+          suggested_level: recommendedLevel(input.role),
+        },
+      },
+    });
+    if (error) return { ok: false, error: translateAuthError(error.message) };
+    if (!data.session || !data.user) {
+      return {
+        ok: false,
+        error: "Conta criada no Supabase! Confirme seu e-mail na caixa de entrada e depois entre.",
+      };
+    }
+    await upsertProfile({
+      id: data.user.id,
+      full_name: input.name.trim(),
+      email,
+      role: input.role,
+      company: input.company.trim() || null,
+      suggested_level: recommendedLevel(input.role),
+    });
+    const session = sessionFromMeta(email, (data.user.user_metadata ?? {}) as Record<string, unknown>, input.remember);
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    return { ok: true, session };
+  }
+
+  /* ---- transporte local (demo) ---- */
+  await new Promise((res) => setTimeout(res, 800 + Math.random() * 300));
   const users = readUsers();
   if (users.some((u) => u.email === email)) {
     return { ok: false, error: "Já existe uma conta com este e-mail — entre com ela." };
@@ -196,6 +274,28 @@ export async function signUp(input: {
 
 export function signOut() {
   localStorage.removeItem(SESSION_KEY);
+  if (sb) void sb.auth.signOut();
+}
+
+/* Restaura a sessão do Supabase após recarregar a página (refresh token).
+   Sem Supabase configurado, vale a sessão local. */
+export async function restoreSession(): Promise<Session | null> {
+  const local = getSession();
+  if (!sb) return local;
+  try {
+    const { data } = await sb.auth.getSession();
+    const u = data.session?.user;
+    if (!u || !u.email) return local;
+    const session = sessionFromMeta(
+      u.email,
+      (u.user_metadata ?? {}) as Record<string, unknown>,
+      true
+    );
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    return session;
+  } catch {
+    return local;
+  }
 }
 
 /* ---- validação ---- */

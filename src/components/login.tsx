@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  EMAIL_RE, ROLES, passwordScore, recommendedLevel, signIn, signUp,
+  authMode, EMAIL_RE, ROLES, passwordScore, signIn, signUp,
   type RoleId, type Session,
 } from "../lib/auth";
 import { LogoMark } from "./icons";
@@ -543,8 +543,16 @@ export function LoginView({ onAuthed }: { onAuthed: (s: Session) => void }) {
           </form>
 
           <p className="font-mono text-[9.5px] text-[var(--color-dim)] leading-relaxed mt-6 text-center">
-            Sessão local com expiração · senha com hash + salt ·<br className="hidden sm:block" />
-            pronto para trocar o transporte por API real ({recommendedLevel("analista")} → trilha júnior)
+            {authMode === "supabase" ? (
+              <>
+                Autenticando via <span className="text-[var(--color-teal)]">Supabase Auth</span> · RLS ativo por usuário
+              </>
+            ) : (
+              <>
+                Sessão com expiração · senha com hash + salt ·<br className="hidden sm:block" />
+                transporte pronto para Supabase (modo atual: local-first)
+              </>
+            )}
           </p>
         </div>
       </section>

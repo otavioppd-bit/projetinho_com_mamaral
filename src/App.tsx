@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { analyze, type Dataset } from "./lib/analyze";
-import { getSession, recommendedLevel, roleLabel, signOut, type Session } from "./lib/auth";
+import { getSession, recommendedLevel, restoreSession, roleLabel, signOut, type Session } from "./lib/auth";
+import { isSupabaseConfigured, saveDatasetMeta } from "./lib/supabase";
 import { IntakeView, PipelineView } from "./components/intake";
 import { Dashboard } from "./components/dashboard";
 import { Academy } from "./components/academy";
 import { ArchitecturePage } from "./components/arch";
 import { LoginView } from "./components/login";
-import { IconCap, IconLayers, IconTable, LogoMark } from "./components/icons";
+import { DataPanel } from "./components/datapanel";
+import { IconCap, IconDatabase, IconLayers, IconTable, LogoMark } from "./components/icons";
 
 type Area = "console" | "academy" | "arch";
 type ConsoleView = "intake" | "pipeline" | "dashboard";
@@ -144,6 +146,16 @@ export default function App() {
   const [area, setArea] = useState<Area>("console");
   const [view, setView] = useState<ConsoleView>("intake");
   const [ds, setDs] = useState<Dataset | null>(null);
+  const [dbOpen, setDbOpen] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  /* restaura a sessão do Supabase após reload (refresh token) */
+  useEffect(() => {
+    if (!session && isSupabaseConfigured) {
+      void restoreSession().then((s) => s && setSession(s));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openArea = (a: Area) => {
     setArea(a);
@@ -155,6 +167,23 @@ export default function App() {
     setDs(parsed);
     setView("pipeline");
     window.scrollTo({ top: 0 });
+    /* persistência real: grava o resultado da análise no Supabase (no-op em modo local) */
+    if (isSupabaseConfigured) {
+      void saveDatasetMeta({
+        name: parsed.name,
+        fileName: name,
+        rowsOriginal: parsed.originalRows,
+        rowsClean: parsed.finalRows,
+        columns: parsed.columns.length,
+        quality: parsed.quality,
+        interventions: parsed.actions.map((a) => ({ label: a.label, count: a.count, kind: a.kind })),
+      }).then((ok) => {
+        if (ok) {
+          setSavedFlash(true);
+          setTimeout(() => setSavedFlash(false), 3200);
+        }
+      });
+    }
     return null;
   };
 
@@ -220,6 +249,28 @@ export default function App() {
           </nav>
 
           <div className="ml-auto flex items-center gap-3">
+            {/* chip do banco de dados */}
+            <button
+              onClick={() => setDbOpen(true)}
+              className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-all group ${
+                isSupabaseConfigured
+                  ? "border-[var(--color-teal)]/40 bg-[rgba(55,230,195,0.07)] hover:bg-[rgba(55,230,195,0.12)]"
+                  : "border-[var(--color-line)] hover:border-[var(--color-amber)]/45 hover:bg-[rgba(255,180,84,0.06)]"
+              }`}
+              title="Abrir painel do banco de dados"
+            >
+              <IconDatabase className={`w-3.5 h-3.5 ${isSupabaseConfigured ? "text-[var(--color-teal)]" : "text-[var(--color-amber)]"}`} />
+              <span className="hidden lg:block text-left leading-none">
+                <span className={`block font-mono text-[10px] uppercase tracking-[0.14em] ${isSupabaseConfigured ? "text-[var(--color-tealhi)]" : "text-[var(--color-amber)]"}`}>
+                  {savedFlash ? "✓ análise salva" : isSupabaseConfigured ? "supabase" : "local-first"}
+                </span>
+                <span className="block font-mono text-[8px] uppercase tracking-[0.14em] text-[var(--color-dim)] mt-0.5">
+                  {isSupabaseConfigured ? "banco conectado" : "conectar banco"}
+                </span>
+              </span>
+              <span className={`w-1.5 h-1.5 rounded-full inline-block lg:hidden ${isSupabaseConfigured ? "bg-[var(--color-teal)]" : "bg-[var(--color-amber)]"} pulse-dot`} />
+            </button>
+
             <span className="hidden xl:flex items-center gap-2 font-mono text-[10.5px] text-[var(--color-mut)]">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-teal)] pulse-dot inline-block" />
               motor local · online
@@ -266,10 +317,17 @@ export default function App() {
             Anthony.ia © 2026 — dados, limpeza e mentoria rodando direto no navegador.
           </p>
           <p className="font-mono text-[10px] text-[var(--color-dim)]">
-            sessão: <span className="text-[var(--color-mut)]">{session.email}</span> · nenhuma linha de dados sai da sua máquina
+            sessão: <span className="text-[var(--color-mut)]">{session.email}</span> ·{" "}
+            {isSupabaseConfigured ? (
+              <span className="text-[var(--color-teal)]">sync com supabase ativo</span>
+            ) : (
+              "modo local-first · conecte o supabase no chip acima"
+            )}
           </p>
         </div>
       </footer>
+
+      <DataPanel open={dbOpen} onClose={() => setDbOpen(false)} />
     </div>
   );
 }

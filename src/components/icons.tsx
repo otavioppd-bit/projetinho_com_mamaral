@@ -34,6 +34,27 @@ export const IconLayers = ({ className = "w-5 h-5" }: P) => (
   </svg>
 );
 
+export const IconRefresh = ({ className = "w-5 h-5" }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...S}>
+    <path d="M20 11a8 8 0 1 0-1.2 5.3" />
+    <path d="M20 5v6h-6" />
+  </svg>
+);
+
+export const IconX = ({ className = "w-5 h-5" }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...S}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </svg>
+);
+
+export const IconDatabase = ({ className = "w-5 h-5" }: P) => (
+  <svg viewBox="0 0 24 24" className={className} {...S}>
+    <ellipse cx="12" cy="5.5" rx="7.5" ry="3" />
+    <path d="M4.5 5.5v13c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3v-13" />
+    <path d="M4.5 12c0 1.66 3.36 3 7.5 3s7.5-1.34 7.5-3" />
+  </svg>
+);
+
 /* ---- marca ---- */
 
 export const LogoMark = ({ className = "w-7 h-7" }: P) => (
