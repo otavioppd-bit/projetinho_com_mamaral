@@ -665,13 +665,22 @@ const loadVisited = (lv: Level): Set<string> => {
     return new Set();
   }
 };
-const loadLevel = (): Level => {
+const loadLevel = (fallback?: Level): Level => {
   const saved = localStorage.getItem("anthony_nivel");
-  return saved === "pleno" || saved === "senior" ? saved : "junior";
+  if (saved === "pleno" || saved === "senior" || saved === "junior") return saved;
+  return fallback ?? "junior";
 };
 
-export function Academy({ ds, onOpenConsole }: { ds: Dataset | null; onOpenConsole: () => void }) {
-  const [level, setLevel] = useState<Level>(loadLevel);
+export function Academy({
+  ds,
+  onOpenConsole,
+  initialLevel,
+}: {
+  ds: Dataset | null;
+  onOpenConsole: () => void;
+  initialLevel?: Level;
+}) {
+  const [level, setLevel] = useState<Level>(() => loadLevel(initialLevel));
   const playbook = useMemo(() => buildPlaybook(level, ds), [level, ds]);
   const greeting = useMemo(() => mentorGreeting(level, ds), [level, ds]);
   const [activeId, setActiveId] = useState(playbook[0].id);
