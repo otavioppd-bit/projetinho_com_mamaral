@@ -4,16 +4,14 @@ import { IntakeView, PipelineView } from "./components/intake";
 import { Dashboard } from "./components/dashboard";
 import { Academy } from "./components/academy";
 import { ArchitecturePage } from "./components/arch";
-import { AILab } from "./components/ailab";
-import { IconCap, IconChip, IconLayers, IconTable, LogoMark } from "./components/icons";
+import { IconCap, IconLayers, IconTable, LogoMark } from "./components/icons";
 
-type Area = "console" | "academy" | "ailab" | "arch";
+type Area = "console" | "academy" | "arch";
 type ConsoleView = "intake" | "pipeline" | "dashboard";
 
 const AREAS: { id: Area; label: string; Icon: typeof IconTable }[] = [
   { id: "console", label: "console", Icon: IconTable },
   { id: "academy", label: "analytics", Icon: IconCap },
-  { id: "ailab", label: "ia lab", Icon: IconChip },
   { id: "arch", label: "arquitetura", Icon: IconLayers },
 ];
 
@@ -156,8 +154,6 @@ export default function App() {
               window.scrollTo({ top: 0 });
             }}
           />
-        ) : area === "ailab" ? (
-          <AILab />
         ) : area === "arch" ? (
           <ArchitecturePage />
         ) : (
@@ -172,7 +168,7 @@ export default function App() {
       <footer className="relative z-10 border-t border-[var(--color-line)] mt-2">
         <div className="max-w-[1400px] mx-auto px-4 md:px-6 py-4 flex flex-wrap items-center justify-between gap-2">
           <p className="font-mono text-[10px] text-[var(--color-dim)]">
-            Anthony.ia © 2026 — dados, mentoria e LLMs rodando direto no navegador.
+            Anthony.ia © 2026 — dados, limpeza e mentoria rodando direto no navegador.
           </p>
           <p className="font-mono text-[10px] text-[var(--color-dim)]">
             nenhuma linha de dados sai da sua máquina

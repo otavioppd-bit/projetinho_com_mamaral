@@ -26,11 +26,6 @@
   --color-sand: #e3c992;
   --color-steel: #7fd4c0;
 
-  /* aliases do IA Lab → mesma paleta */
-  --color-void: #05080f;
-  --color-cyan: #37e6c3;
-  --color-cyanhi: #8df5e0;
-
   --font-display: "Cabinet Grotesk", "Satoshi", sans-serif;
   --font-body: "Satoshi", system-ui, sans-serif;
   --font-mono: "Spline Sans Mono", ui-monospace, "SFMono-Regular", monospace;
