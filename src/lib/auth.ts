@@ -12,9 +12,12 @@ export const authMode: "supabase" | "local" = isSupabaseConfigured ? "supabase" 
 function translateAuthError(msg?: string): string {
   if (!msg) return "Não foi possível autenticar. Tente novamente.";
   if (/invalid login credentials/i.test(msg)) return "E-mail ou senha incorretos.";
-  if (/already registered/i.test(msg)) return "Já existe uma conta com este e-mail — entre com ela.";
-  if (/rate limit/i.test(msg)) return "Muitas tentativas — aguarde um instante.";
-  if (/email/i.test(msg) && /confirm/i.test(msg)) return "Confirme seu e-mail na caixa de entrada e entre novamente.";
+  if (/already registered/i.test(msg))
+    return "Já existe uma conta com este e-mail. Se ela está como 'aguardando confirmação' no painel, confirme o e-mail ou desative 'Confirm email' em Authentication → Providers → Email.";
+  if (/security notice|rate limit/i.test(msg))
+    return "O Supabase limitou cadastros temporários (proteção anti-spam do plano gratuito). Aguarde ~1 hora e tente de novo.";
+  if (/email/i.test(msg) && /confirm/i.test(msg))
+    return "Conta criada, mas o e-mail ainda não foi confirmado. Abra o link recebido — ou desative 'Confirm email' (Authentication → Providers → Email) para entrar na hora.";
   return msg;
 }
 
@@ -227,7 +230,8 @@ export async function signUp(input: {
     if (!data.session || !data.user) {
       return {
         ok: false,
-        error: "Conta criada no Supabase! Confirme seu e-mail na caixa de entrada e depois entre.",
+        error:
+          "Conta criada! Ela já está no Supabase: Dashboard → Authentication → Users (status: aguardando confirmação). Confirme o e-mail recebido — ou desative 'Confirm email' em Authentication → Providers → Email para entrar na hora.",
       };
     }
     await upsertProfile({
