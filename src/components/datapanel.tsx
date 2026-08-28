@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  isSupabaseConfigured, listDatasets, ping, supabaseHost, tableCounts,
+  credSource, isSupabaseConfigured, listDatasets, ping, supabaseHost, tableCounts,
   type DatasetRow, type PingResult, type TableCounts,
 } from "../lib/supabase";
 import { authMode } from "../lib/auth";
@@ -82,7 +82,9 @@ export function DataPanel({ open, onClose }: { open: boolean; onClose: () => voi
           <div className="flex-1">
             <p className="font-display font-bold text-[16px] tracking-tight leading-none">Banco de dados</p>
             <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--color-dim)] mt-1">
-              {connected ? `supabase · ${supabaseHost}` : "modo local-first"}
+              {connected
+                ? `supabase · ${supabaseHost} · credencial ${credSource === "env" ? "do .env" : "embutida no bundle"}`
+                : "modo local-first · sem credencial neste bundle"}
             </p>
           </div>
           {connected && (
@@ -250,6 +252,12 @@ export function DataPanel({ open, onClose }: { open: boolean; onClose: () => voi
                     transporte: <b className="text-[var(--color-ink)]">{authMode}</b> · contas deste navegador · zero configuração
                   </p>
                 </div>
+                <p className="font-mono text-[9.5px] text-[var(--color-dim)] mt-2.5 leading-relaxed border-t border-[var(--color-line)] pt-2.5">
+                  diagnóstico: nenhuma credencial Supabase foi encontrada neste bundle. Se o projeto já
+                  foi conectado, você está vendo um build desatualizado — rode{" "}
+                  <span className="text-[var(--color-tealhi)]">npm run build</span> e recarregue com{" "}
+                  <span className="text-[var(--color-tealhi)]">Ctrl/Cmd + Shift + R</span>.
+                </p>
               </section>
             </>
           )}

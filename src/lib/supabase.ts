@@ -14,10 +14,19 @@ const DEFAULT_URL = "https://tgfhytpfivmntynwrnog.supabase.co";
 const DEFAULT_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZmh5dHBmaXZtbnR5bndybm9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4NTk3MjgsImV4cCI6MjEwMzQzNTcyOH0.n2usF8cEJCY7uUQBXw5oIB5TwaQVJibnWLZZecEseJo";
 
-const url = (import.meta.env.VITE_SUPABASE_URL ?? "").trim() || DEFAULT_URL;
-const key = (import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim() || DEFAULT_KEY;
+const envUrl = (import.meta.env.VITE_SUPABASE_URL ?? "").trim();
+const envKey = (import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
+const url = envUrl || DEFAULT_URL;
+const key = envKey || DEFAULT_KEY;
 
 export const isSupabaseConfigured = /^https:\/\/.+\./.test(url) && key.length > 20;
+
+/* diagnóstico visível: de onde veio a credencial (env ou embutida) */
+export const credSource: "env" | "embutida" | "ausente" = !isSupabaseConfigured
+  ? "ausente"
+  : envUrl && envKey
+    ? "env"
+    : "embutida";
 
 export const supabaseHost = isSupabaseConfigured ? new URL(url).host : null;
 
