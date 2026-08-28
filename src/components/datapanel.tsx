@@ -120,7 +120,7 @@ export function DataPanel({ open, onClose }: { open: boolean; onClose: () => voi
                       </svg>
                       consultando o projeto…
                     </p>
-                  ) : pingRes?.ok && !pingRes.error ? (
+                  ) : pingRes?.state === "connected" ? (
                     <div className="flex items-center gap-3">
                       <span className="font-display font-bold text-[26px] text-[var(--color-tealhi)] tabular-nums">{pingRes.ms}ms</span>
                       <div>
@@ -128,20 +128,25 @@ export function DataPanel({ open, onClose }: { open: boolean; onClose: () => voi
                         <p className="font-mono text-[9.5px] text-[var(--color-dim)] mt-0.5">round-trip real contra o Postgres gerenciado</p>
                       </div>
                     </div>
-                  ) : pingRes?.ok && pingRes.error ? (
-                    <div className="flex items-center gap-3">
-                      <span className="font-display font-bold text-[26px] text-[var(--color-amber)] tabular-nums">{pingRes.ms}ms</span>
+                  ) : pingRes?.state === "schema_pending" ? (
+                    <div className="flex items-start gap-3">
+                      <span className="font-display font-bold text-[26px] text-[var(--color-amber)] tabular-nums shrink-0">{pingRes.ms}ms</span>
                       <div>
-                        <p className="text-[12.5px] font-semibold text-[var(--color-amber)]">projeto conectado · schema pendente</p>
-                        <p className="font-mono text-[9.5px] text-[var(--color-mut)] mt-0.5 leading-relaxed">{pingRes.error}</p>
+                        <p className="text-[12.5px] font-semibold text-[var(--color-amber)]">projeto no ar · schema pendente</p>
+                        <p className="font-mono text-[9.5px] text-[var(--color-mut)] mt-0.5 leading-relaxed">{pingRes.detail}</p>
                       </div>
                     </div>
                   ) : (
                     <div>
                       <p className="text-[12.5px] font-semibold text-[var(--color-coral)]">falha na conexão</p>
                       <p className="font-mono text-[10px] text-[var(--color-mut)] mt-1 leading-relaxed">
-                        {pingRes?.error ?? "sem resposta"} — confira as chaves no .env.local e se o schema.sql foi executado.
+                        {pingRes?.detail ?? "sem resposta"}
                       </p>
+                      {pingRes?.raw && (
+                        <p className="font-mono text-[8.5px] text-[var(--color-dim)] mt-2 border-t border-[var(--color-line)] pt-2 break-all">
+                          diagnóstico bruto: {pingRes.raw}
+                        </p>
+                      )}
                     </div>
                   )}
                   <div className="grid grid-cols-2 gap-2.5 mt-4">
