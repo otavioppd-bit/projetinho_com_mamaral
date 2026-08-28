@@ -7,8 +7,15 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const url = (import.meta.env.VITE_SUPABASE_URL ?? "").trim();
-const key = (import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim();
+/* Credenciais do projeto conectado. A anon key é pública por design —
+   a segurança real vem das políticas de RLS do schema.sql.
+   Variáveis de ambiente (.env.local) têm prioridade sobre o padrão. */
+const DEFAULT_URL = "https://tgfhytpfivmntynwrnog.supabase.co";
+const DEFAULT_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnZmh5dHBmaXZtbnR5bndybm9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4NTk3MjgsImV4cCI6MjEwMzQzNTcyOH0.n2usF8cEJCY7uUQBXw5oIB5TwaQVJibnWLZZecEseJo";
+
+const url = (import.meta.env.VITE_SUPABASE_URL ?? "").trim() || DEFAULT_URL;
+const key = (import.meta.env.VITE_SUPABASE_ANON_KEY ?? "").trim() || DEFAULT_KEY;
 
 export const isSupabaseConfigured = /^https:\/\/.+\./.test(url) && key.length > 20;
 
@@ -33,7 +40,15 @@ export async function ping(): Promise<PingResult> {
   const t0 = performance.now();
   const { error } = await sb.from("profiles").select("id", { head: true, count: "exact" }).limit(1);
   const ms = Math.round(performance.now() - t0);
-  return error ? { ok: false, ms, error: error.message } : { ok: true, ms };
+  if (!error) return { ok: true, ms };
+  /* URL + chave funcionam, mas as tabelas ainda não existem:
+     o usuário precisa rodar o supabase/schema.sql no SQL Editor */
+  const msg = error.message ?? "";
+  const schemaMissing = /does not exist|schema cache|PGRST205|PGRST202|permission denied|42P01|42501/i.test(msg);
+  if (schemaMissing) {
+    return { ok: true, ms, error: "tabelas ausentes — execute o supabase/schema.sql no SQL Editor" };
+  }
+  return { ok: false, ms, error: msg };
 }
 
 export interface TableCounts {

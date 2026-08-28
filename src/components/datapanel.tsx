@@ -112,12 +112,20 @@ export function DataPanel({ open, onClose }: { open: boolean; onClose: () => voi
                       </svg>
                       consultando o projeto…
                     </p>
-                  ) : pingRes?.ok ? (
+                  ) : pingRes?.ok && !pingRes.error ? (
                     <div className="flex items-center gap-3">
                       <span className="font-display font-bold text-[26px] text-[var(--color-tealhi)] tabular-nums">{pingRes.ms}ms</span>
                       <div>
                         <p className="text-[12.5px] font-semibold text-[var(--color-teal)]">conectado · auth + RLS ativos</p>
                         <p className="font-mono text-[9.5px] text-[var(--color-dim)] mt-0.5">round-trip real contra o Postgres gerenciado</p>
+                      </div>
+                    </div>
+                  ) : pingRes?.ok && pingRes.error ? (
+                    <div className="flex items-center gap-3">
+                      <span className="font-display font-bold text-[26px] text-[var(--color-amber)] tabular-nums">{pingRes.ms}ms</span>
+                      <div>
+                        <p className="text-[12.5px] font-semibold text-[var(--color-amber)]">projeto conectado · schema pendente</p>
+                        <p className="font-mono text-[9.5px] text-[var(--color-mut)] mt-0.5 leading-relaxed">{pingRes.error}</p>
                       </div>
                     </div>
                   ) : (

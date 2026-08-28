@@ -241,11 +241,21 @@ export function LoginView({ onAuthed }: { onAuthed: (s: Session) => void }) {
   };
 
   const fillDemo = () => {
-    setMode("login");
-    setEmail("analista@anthony.ia");
-    setSecret("demo1234");
     setErrors({});
     setGlobalError(null);
+    if (authMode === "supabase") {
+      /* com o banco conectado, o demo cria uma conta real no Supabase Auth */
+      setMode("signup");
+      setName("Ana Ribeiro");
+      setEmail(`demo.${Date.now().toString(36)}@anthony.ia`);
+      setSecret("demo1234");
+      setRole("analista");
+      setCompany("Anthony Labs");
+    } else {
+      setMode("login");
+      setEmail("analista@anthony.ia");
+      setSecret("demo1234");
+    }
   };
 
   const switchMode = (m: Mode) => {
@@ -538,7 +548,9 @@ export function LoginView({ onAuthed }: { onAuthed: (s: Session) => void }) {
               onClick={fillDemo}
               className="w-full font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-dim)] hover:text-[var(--color-tealhi)] border border-dashed border-[var(--color-line2)] hover:border-[var(--color-teal)]/40 rounded-lg py-2.5 transition-colors"
             >
-              ◈ usar perfil demo — analista@anthony.ia
+              {authMode === "supabase"
+                ? "◈ preparar conta demo — preenche e é só enviar"
+                : "◈ usar perfil demo — analista@anthony.ia"}
             </button>
           </form>
 
@@ -546,6 +558,10 @@ export function LoginView({ onAuthed }: { onAuthed: (s: Session) => void }) {
             {authMode === "supabase" ? (
               <>
                 Autenticando via <span className="text-[var(--color-teal)]">Supabase Auth</span> · RLS ativo por usuário
+                <br className="hidden sm:block" />
+                <span className="text-[var(--color-dim)]">
+                  demo em 1 clique: Authentication → Providers → Email → desligue “Confirm email”
+                </span>
               </>
             ) : (
               <>
