@@ -36,28 +36,71 @@ export const sb: SupabaseClient | null = isSupabaseConfigured
     })
   : null;
 
-/* ---------------- diagnóstico ---------------- */
+/* ---------------- diagnóstico em dois estágios ----------------
+   Estágio 1: o projeto responde e a chave é válida?  (rede / pausa / chave)
+   Estágio 2: as tabelas do schema.sql existem?        (schema pendente)
+   Assim o painel diz a causa exata — nunca um erro genérico. */
+
+export type PingState = "connected" | "schema_pending" | "unreachable";
 
 export interface PingResult {
-  ok: boolean;
+  state: PingState;
   ms: number;
-  error?: string;
+  detail?: string;
+  raw?: string;
 }
 
 export async function ping(): Promise<PingResult> {
-  if (!sb) return { ok: false, ms: 0, error: "modo local-first" };
+  if (!sb) return { state: "unreachable", ms: 0, detail: "modo local-first — nenhuma credencial neste bundle" };
   const t0 = performance.now();
-  const { error } = await sb.from("profiles").select("id", { head: true, count: "exact" }).limit(1);
-  const ms = Math.round(performance.now() - t0);
-  if (!error) return { ok: true, ms };
-  /* URL + chave funcionam, mas as tabelas ainda não existem:
-     o usuário precisa rodar o supabase/schema.sql no SQL Editor */
-  const msg = error.message ?? "";
-  const schemaMissing = /does not exist|schema cache|PGRST205|PGRST202|permission denied|42P01|42501/i.test(msg);
-  if (schemaMissing) {
-    return { ok: true, ms, error: "tabelas ausentes — execute o supabase/schema.sql no SQL Editor" };
+
+  /* estágio 1 — API viva + chave aceita */
+  try {
+    const ctl = new AbortController();
+    const timer = window.setTimeout(() => ctl.abort(), 8000);
+    const res = await fetch(`${url}/rest/v1/`, { headers: { apikey: key }, signal: ctl.signal });
+    window.clearTimeout(timer);
+    if (!res.ok) {
+      const ms = Math.round(performance.now() - t0);
+      if (res.status === 401 || res.status === 403) {
+        return { state: "unreachable", ms, detail: `a chave anon foi recusada (HTTP ${res.status}) — confira se copiou a “anon public”, não a service_role.`, raw: `HTTP ${res.status}` };
+      }
+      return {
+        state: "unreachable", ms,
+        detail: res.status === 404 || res.status >= 500
+          ? `o projeto respondeu HTTP ${res.status} — projetos gratuitos pausam após inatividade; se estiver pausado, clique em “Restore” no Dashboard.`
+          : `o projeto respondeu HTTP ${res.status}.`,
+        raw: `HTTP ${res.status}`,
+      };
+    }
+  } catch (e) {
+    const ms = Math.round(performance.now() - t0);
+    return {
+      state: "unreachable", ms,
+      detail: "a requisição não saiu deste ambiente — o preview/iframe pode estar bloqueando rede externa, ou o projeto está pausado. Abra o app em uma aba normal e reteste.",
+      raw: e instanceof Error ? e.message : String(e),
+    };
   }
-  return { ok: false, ms, error: msg };
+
+  /* estágio 2 — tabelas do schema instaladas? */
+  const q = await sb.from("profiles").select("id", { head: true, count: "exact" }).limit(1);
+  const ms = Math.round(performance.now() - t0);
+  const err = q.error as { message?: string; code?: string } | null;
+  if (!err) return { state: "connected", ms };
+  const msg = err.message ?? "";
+  const schemaMissing =
+    err.code === "PGRST205" || err.code === "42P01" || err.code === "42501" ||
+    /does not exist|schema cache|permission denied/i.test(msg);
+  if (schemaMissing) {
+    return {
+      state: "schema_pending", ms,
+      detail: /permission denied/i.test(msg)
+        ? "as tabelas existem, mas sem permissão — rode o schema.sql de novo (ele aplica os grants do PostgREST)."
+        : "projeto no ar e chave válida — só faltam as tabelas. Execute o supabase/schema.sql no SQL Editor.",
+      raw: msg,
+    };
+  }
+  return { state: "unreachable", ms, detail: msg, raw: msg };
 }
 
 export interface TableCounts {

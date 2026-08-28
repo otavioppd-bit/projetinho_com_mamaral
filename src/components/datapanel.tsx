@@ -51,10 +51,16 @@ export function DataPanel({ open, onClose }: { open: boolean; onClose: () => voi
   const refresh = useCallback(async () => {
     if (!isSupabaseConfigured) return;
     setChecking(true);
-    const [p, c, d] = await Promise.all([ping(), tableCounts(), listDatasets()]);
+    const p = await ping();
     setPingRes(p);
-    setCounts(c);
-    setDatasets(d);
+    if (p.state === "connected") {
+      const [c, d] = await Promise.all([tableCounts(), listDatasets()]);
+      setCounts(c);
+      setDatasets(d);
+    } else {
+      setCounts(null);
+      setDatasets(null);
+    }
     setChecking(false);
   }, []);
 
